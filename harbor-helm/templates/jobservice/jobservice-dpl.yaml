@@ -35,6 +35,9 @@ spec:
 {{ toYaml .Values.jobservice.podAnnotations | indent 8 }}
 {{- end }}
     spec:
+{{- if .Values.jobservice.serviceAccountName }}
+      serviceAccountName: {{ .Values.jobservice.serviceAccountName }}
+{{- end -}}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
