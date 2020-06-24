@@ -648,11 +648,11 @@ database:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: goharbor/harbor-db
-      tag: dev
+      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
+      tag: 12.2
     # the image used by the init container
     initContainerImage:
-      repository: busybox
+      repository: registry.suse.com/suse/sle15
       tag: latest
     # The initial superuser password for internal database
     password: "changeit"
