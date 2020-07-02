@@ -459,7 +459,6 @@ registry:
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registryctl
       tag: 2.0.0
-
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -507,7 +506,7 @@ chartmuseum:
   absoluteUrl: false
   image:
     repository: goharbor/chartmuseum-photon
-    tag: v2.0.0
+    tag: v2.0.1
   replicas: 1
   # resources:
   #  requests:
@@ -526,7 +525,7 @@ clair:
   clair:
     image:
       repository: goharbor/clair-photon
-      tag: v2.0.0
+      tag: v2.0.1
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -534,7 +533,7 @@ clair:
   adapter:
     image:
       repository: goharbor/clair-adapter-photon
-      tag: v2.0.0
+      tag: v2.0.1
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -610,7 +609,7 @@ notary:
     serviceAccountName: ""
     image:
       repository: goharbor/notary-server-photon
-      tag: v2.0.0
+      tag: v2.0.1
     replicas: 1
     # resources:
     #  requests:
@@ -621,7 +620,7 @@ notary:
     serviceAccountName: ""
     image:
       repository: goharbor/notary-signer-photon
-      tag: v2.0.0
+      tag: v2.0.1
     replicas: 1
     # resources:
     #  requests:
