@@ -422,8 +422,8 @@ core:
 
 jobservice:
   image:
-    repository: goharbor/harbor-jobservice
-    tag: dev
+    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-jobservice
+    tag: 2.0.0
   replicas: 1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
