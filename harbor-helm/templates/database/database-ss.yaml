@@ -34,7 +34,8 @@ spec:
         image: {{ .Values.database.internal.initContainerImage.repository }}:{{ .Values.database.internal.initContainerImage.tag }}
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         command: ["/bin/sh"]
-        args: ["-c", "chown -R 999:999 /var/lib/postgresql/data"]
+        # 26:26 are postgres UID/GID numbers in SUSE systems
+        args: ["-c", "chown -R 26:26 /var/lib/postgresql/data"]
         volumeMounts:
         - name: database-data
           mountPath: /var/lib/postgresql/data
