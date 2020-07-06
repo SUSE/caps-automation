@@ -620,11 +620,11 @@ database:
   type: internal
   internal:
     image:
-      repository: goharbor/harbor-db
-      tag: v2.0.0
+      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
+      tag: 12.2
     # the image used by the init container
     initContainerImage:
-      repository: busybox
+      repository: registry.suse.com/suse/sle15
       tag: latest
     # The initial superuser password for internal database
     password: "changeit"
