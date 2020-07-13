@@ -484,7 +484,7 @@ registry:
       privateKeySecret: "my-secret"
 
 chartmuseum:
-  enabled: true
+  enabled: false
   # Harbor defaults ChartMuseum to returning relative urls, if you want using absolute url you should enable it by change the following value to 'true'
   absoluteUrl: false
   image:
@@ -502,7 +502,7 @@ chartmuseum:
   podAnnotations: {}
 
 clair:
-  enabled: true
+  enabled: false
   clair:
     image:
       repository: goharbor/clair-photon
