@@ -250,7 +250,7 @@ persistence:
     # and chartmuseum
     type: filesystem
     filesystem:
-      rootdirectory: /storage
+      rootdirectory: /var/lib/docker-registry
       #maxthreads: 100
     azure:
       accountname: accountname
