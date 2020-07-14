@@ -622,10 +622,6 @@ database:
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
       tag: 12.3
-    # the image used by the init container
-    initContainerImage:
-      repository: registry.suse.com/suse/sle15
-      tag: latest
     # The initial superuser password for internal database
     password: "changeit"
     # resources:
