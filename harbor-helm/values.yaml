@@ -350,8 +350,8 @@ proxy:
 # If expose the service via "ingress", the Nginx will not be used
 nginx:
   image:
-    repository: goharbor/nginx-photon
-    tag: v2.0.0
+    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-nginx
+    tag: 1.16.1
   replicas: 1
   # resources:
   #  requests:
