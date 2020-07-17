@@ -534,9 +534,9 @@ trivy:
   enabled: true
   image:
     # repository the repository for Trivy adapter image
-    repository: goharbor/trivy-adapter-photon
+    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-trivy-adapter
     # tag the tag for Trivy adapter image
-    tag: v2.0.0
+    tag: 0.9.0
   # replicas the number of Pod replicas
   replicas: 1
   # debugMode the flag to enable Trivy debug mode with more verbose scanning log
