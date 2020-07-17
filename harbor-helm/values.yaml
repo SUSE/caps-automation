@@ -365,8 +365,8 @@ nginx:
 
 portal:
   image:
-    repository: goharbor/harbor-portal
-    tag: v2.0.0
+    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-portal
+    tag: 2.0.0
   replicas: 1
 # resources:
 #  requests:
@@ -434,8 +434,8 @@ jobservice:
 registry:
   registry:
     image:
-      repository: goharbor/registry-photon
-      tag: v2.0.0
+      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registry
+      tag: 2.7.1
 
     # resources:
     #  requests:
@@ -668,8 +668,8 @@ redis:
   type: internal
   internal:
     image:
-      repository: goharbor/redis-photon
-      tag: v2.0.0
+      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-redis
+      tag: 6.0.5
     # resources:
     #  requests:
     #    memory: 256Mi
