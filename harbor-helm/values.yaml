@@ -621,7 +621,7 @@ database:
   internal:
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
-      tag: 12.2
+      tag: 12.3
     # the image used by the init container
     initContainerImage:
       repository: registry.suse.com/suse/sle15
