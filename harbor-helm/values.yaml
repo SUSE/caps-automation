@@ -351,7 +351,7 @@ proxy:
 nginx:
   image:
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-nginx
-    tag: 1.16.1
+    tag: 1.16.1-rev1
   replicas: 1
   # resources:
   #  requests:
@@ -366,7 +366,7 @@ nginx:
 portal:
   image:
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-portal
-    tag: 2.0.0
+    tag: 2.0.1-rev1
   replicas: 1
 # resources:
 #  requests:
@@ -381,7 +381,7 @@ portal:
 core:
   image:
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-core
-    tag: 2.0.0
+    tag: 2.0.1-rev1
   replicas: 1
   ## Liveness probe values
   livenessProbe:
@@ -412,7 +412,7 @@ core:
 jobservice:
   image:
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-jobservice
-    tag: 2.0.0
+    tag: 2.0.1-rev1
   replicas: 1
   maxJobWorkers: 10
   # The logger for jobs: "file", "database" or "stdout"
@@ -435,7 +435,7 @@ registry:
   registry:
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registry
-      tag: 2.7.1
+      tag: 2.7.1-rev1
 
     # resources:
     #  requests:
@@ -444,7 +444,7 @@ registry:
   controller:
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registryctl
-      tag: 2.0.0
+      tag: 2.0.1-rev1
 
     # resources:
     #  requests:
@@ -536,7 +536,7 @@ trivy:
     # repository the repository for Trivy adapter image
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-trivy-adapter
     # tag the tag for Trivy adapter image
-    tag: 0.9.0
+    tag: 0.11.0-rev1
   # replicas the number of Pod replicas
   replicas: 1
   # debugMode the flag to enable Trivy debug mode with more verbose scanning log
@@ -621,7 +621,7 @@ database:
   internal:
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
-      tag: 12.3
+      tag: 12.3-rev1
     # the image used by the init container
     initContainerImage:
       repository: registry.suse.com/suse/sle15
@@ -669,7 +669,7 @@ redis:
   internal:
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-redis
-      tag: 6.0.5
+      tag: 6.0.5-rev1
     # resources:
     #  requests:
     #    memory: 256Mi
