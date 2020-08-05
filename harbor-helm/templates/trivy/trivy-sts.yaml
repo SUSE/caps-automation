@@ -30,6 +30,10 @@ spec:
 {{ toYaml .Values.trivy.podAnnotations | indent 8 }}
 {{- end }}
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10000
+        fsGroup: 10000
       automountServiceAccountToken: false
       containers:
         - name: trivy
