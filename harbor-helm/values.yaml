@@ -339,6 +339,11 @@ proxy:
     - core
     - jobservice
     - clair
+    - trivy
+
+# The custom ca bundle secret, the secret must contain key named "ca.crt"
+# which will be injected into the trust store for chartmuseum, clair, core, jobservice, registry, trivy components
+# caBundleSecretName: ""
 
 ## UAA Authentication Options
 # If you're using UAA for authentication behind a self-signed
@@ -352,6 +357,8 @@ nginx:
   image:
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-nginx
     tag: 2.0.0-rev1
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   replicas: 1
   # resources:
   #  requests:
@@ -367,6 +374,8 @@ portal:
   image:
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-portal
     tag: 2.0.0-rev1
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   replicas: 1
 # resources:
 #  requests:
@@ -382,6 +391,8 @@ core:
   image:
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-core
     tag: 2.0.0-rev1
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   replicas: 1
   ## Liveness probe values
   livenessProbe:
@@ -414,6 +425,8 @@ jobservice:
     repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-jobservice
     tag: 2.0.0-rev1
   replicas: 1
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   maxJobWorkers: 10
   # The logger for jobs: "file", "database" or "stdout"
   jobLogger: file
@@ -432,6 +445,8 @@ jobservice:
   secret: ""
 
 registry:
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   registry:
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registry
@@ -450,6 +465,8 @@ registry:
     #  requests:
     #    memory: 256Mi
     #    cpu: 100m
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   replicas: 1
   nodeSelector: {}
   tolerations: []
@@ -485,11 +502,13 @@ registry:
 
 chartmuseum:
   enabled: false
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   # Harbor defaults ChartMuseum to returning relative urls, if you want using absolute url you should enable it by change the following value to 'true'
   absoluteUrl: false
   image:
     repository: goharbor/chartmuseum-photon
-    tag: v2.0.0
+    tag: v2.0.1
   replicas: 1
   # resources:
   #  requests:
@@ -503,10 +522,12 @@ chartmuseum:
 
 clair:
   enabled: false
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   clair:
     image:
       repository: goharbor/clair-photon
-      tag: v2.0.0
+      tag: v2.0.1
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -514,7 +535,7 @@ clair:
   adapter:
     image:
       repository: goharbor/clair-adapter-photon
-      tag: v2.0.0
+      tag: v2.0.1
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -536,7 +557,9 @@ trivy:
     # repository the repository for Trivy adapter image
     repository: goharbor/trivy-adapter-photon
     # tag the tag for Trivy adapter image
-    tag: v2.0.0
+    tag: v2.0.1
+  # set the service account to be used, default if left empty
+  serviceAccountName: ""
   # replicas the number of Pod replicas
   replicas: 1
   # debugMode the flag to enable Trivy debug mode with more verbose scanning log
@@ -584,18 +607,22 @@ trivy:
 notary:
   enabled: false
   server:
+    # set the service account to be used, default if left empty
+    serviceAccountName: ""
     image:
       repository: goharbor/notary-server-photon
-      tag: v2.0.0
+      tag: v2.0.1
     replicas: 1
     # resources:
     #  requests:
     #    memory: 256Mi
     #    cpu: 100m
   signer:
+    # set the service account to be used, default if left empty
+    serviceAccountName: ""
     image:
       repository: goharbor/notary-signer-photon
-      tag: v2.0.0
+      tag: v2.0.1
     replicas: 1
     # resources:
     #  requests:
@@ -619,6 +646,8 @@ database:
   # and fill the connection informations in "external" section
   type: internal
   internal:
+    # set the service account to be used, default if left empty
+    serviceAccountName: ""
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
       tag: 2.0.0-rev1
@@ -667,6 +696,8 @@ redis:
   # and fill the connection informations in "external" section
   type: internal
   internal:
+    # set the service account to be used, default if left empty
+    serviceAccountName: ""
     image:
       repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-redis
       tag: 2.0.0-rev1
