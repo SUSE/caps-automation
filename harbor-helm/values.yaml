@@ -355,8 +355,8 @@ proxy:
 # If expose the service via "ingress", the Nginx will not be used
 nginx:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-nginx
-    tag: 2.0.0-rev1
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-nginx
+    tag: 2.0.1-rev1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -372,8 +372,8 @@ nginx:
 
 portal:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-portal
-    tag: 2.0.0-rev1
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-portal
+    tag: 2.0.1-rev1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -389,8 +389,8 @@ portal:
 
 core:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-core
-    tag: 2.0.0-rev1
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-core
+    tag: 2.0.1-rev1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -422,8 +422,8 @@ core:
 
 jobservice:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-jobservice
-    tag: 2.0.0-rev1
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-jobservice
+    tag: 2.0.1-rev1
   replicas: 1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
@@ -449,8 +449,8 @@ registry:
   serviceAccountName: ""
   registry:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registry
-      tag: 2.0.0-rev1
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-registry
+      tag: 2.0.1-rev1
 
     # resources:
     #  requests:
@@ -458,8 +458,8 @@ registry:
     #    cpu: 100m
   controller:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registryctl
-      tag: 2.0.0-rev1
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-registryctl
+      tag: 2.0.1-rev1
 
     # resources:
     #  requests:
@@ -649,8 +649,8 @@ database:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
-      tag: 2.0.0-rev1
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-db
+      tag: 2.0.1-rev1
     # the image used by the init container
     initContainerImage:
       repository: registry.suse.com/suse/sle15
@@ -699,8 +699,8 @@ redis:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-redis
-      tag: 2.0.0-rev1
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-redis
+      tag: 2.0.1-rev1
     # resources:
     #  requests:
     #    memory: 256Mi
