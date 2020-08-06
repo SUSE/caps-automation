@@ -574,3 +574,44 @@ host:port,pool_size,password
     {{- printf "%s-trivy-internal-tls" (include "harbor.fullname" .) -}}
   {{- end -}}
 {{- end -}}
+
+{{- define "harbor.test" -}}
+  {{- printf "%s-test" (include "harbor.fullname" .) -}}
+{{- end -}}
+
+{{- define "harbor.tests.api.abortOnFailure" -}}
+  {{- if .Values.tests.api.abortOnFailure -}}
+    {{- printf "-X" }}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.tests.api.include" -}}
+  {{- if .Values.tests.api.include -}}
+    {{- printf "-i %s" (.Values.tests.api.include | join " -i ") }}
+  {{- end -}}
+{{- end -}}
+
+# Build exclude list accordingly to enabled services
+{{- define "harbor.tests.api.exclude" -}}
+  {{- $el := .Values.tests.api.exclude -}}
+  {{- if not .Values.chartmuseum.enabled -}}
+    {{- $el = append $el "list_helm_charts" -}}
+  {{- end -}}
+  {{- if not .Values.notary.enabled -}}
+    {{- $el = append $el "sign_image" -}}
+  {{- end -}}
+  {{- if not .Values.trivy.enabled -}}
+    {{- $el = append $el "push_index" -}}
+  {{- end -}}
+  {{- if or (not .Values.trivy.enabled) (not .Values.clair.enabled) -}}
+    {{- $el = append $el "scan" -}}
+    {{- $el = append $el "scan_all" -}}
+  {{- end -}}
+  {{- if $el -}}
+    {{- printf "-e %s" ($el | join " -e ") }}
+  {{- end -}}
+{{- end -}}
+
+{{- define "harbor.tests.api.options" -}}
+  {{- printf "%s %s %s" (include "harbor.tests.api.include" .) (include "harbor.tests.api.exclude" .) (include "harbor.tests.api.abortOnFailure" .) }}
+{{- end -}}

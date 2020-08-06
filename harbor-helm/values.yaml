@@ -687,3 +687,34 @@ redis:
     password: ""
   ## Additional deployment annotations
   podAnnotations: {}
+
+# Tests that can be executed by using helm test
+tests:
+  api:
+    # Enable/disable API tests
+    enabled: true
+    # Stops test execution if any test fails
+    abortOnFailure: false
+    # Select test cases to run by tag
+    include: []
+    # Select test cases not to run by tag. These tests are not run
+    # even if included on the include list.
+    # Note: Some tests are automatically skipped according to the
+    # harbor enabled services/features.
+    exclude: []
+    image:
+      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-test
+      tag: 2.0.0-rev1
+    # resources:
+    #  requests:
+    #    memory: 128Mi
+    #    cpu: 100m
+    dind:
+      image:
+        repository: registry.suse.de/devel/caps/registry/containers/registry/docker-dind
+        tag: 2.0.0-rev1
+      # resources:
+      #  requests:
+      #    memory: 128Mi
+      #    cpu: 100m
+    podAnnotations: {}
