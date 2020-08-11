@@ -555,9 +555,9 @@ trivy:
   enabled: false
   image:
     # repository the repository for Trivy adapter image
-    repository: goharbor/trivy-adapter-photon
+    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-trivy-adapter
     # tag the tag for Trivy adapter image
-    tag: v2.0.1
+    tag: 2.0.0-rev1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   # replicas the number of Pod replicas

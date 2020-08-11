@@ -37,10 +37,6 @@ spec:
 {{- if .Values.trivy.serviceAccountName }}
       serviceAccountName: {{ .Values.trivy.serviceAccountName }}
 {{- end }}
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 10000
-        fsGroup: 10000
       automountServiceAccountToken: false
       containers:
         - name: trivy
