@@ -552,12 +552,12 @@ clair:
 
 trivy:
   # enabled the flag to enable Trivy scanner
-  enabled: false
+  enabled: true
   image:
     # repository the repository for Trivy adapter image
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-trivy-adapter
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-trivy-adapter
     # tag the tag for Trivy adapter image
-    tag: 2.0.0-rev1
+    tag: 2.0.1-rev1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   # replicas the number of Pod replicas
