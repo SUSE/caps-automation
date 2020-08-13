@@ -10,13 +10,8 @@ keywords:
 home: https://goharbor.io
 icon: https://raw.githubusercontent.com/goharbor/harbor/master/docs/img/harbor_logo.png
 sources:
-- https://github.com/goharbor/harbor
-- https://github.com/goharbor/harbor-helm
+- https://github.com/SUSE/registry
 maintainers:
-- name: Wenkai Yin
-  email: yinw@vmware.com
-- name: Weiwei He
-  email: hweiwei@vmware.com
-- name: Qian Deng
-  email: dengq@vmware.com
+- name: SUSE Ecosystem Team
+  email: ecosystem@suse.de
 engine: gotpl
