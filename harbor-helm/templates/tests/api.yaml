@@ -82,6 +82,7 @@ spec:
         {{- end }}
       securityContext:
         privileged: true
+        allowPrivilegeEscalation: true
 {{- if .Values.tests.api.dind.resources }}
       resources:
 {{ toYaml .Values.tests.api.dind.resources | indent 8 }}
