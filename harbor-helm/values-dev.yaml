@@ -1,27 +1,27 @@
 nginx:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-nginx
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-nginx
 
 portal:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-portal
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-portal
 
 core:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-core
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-core
 
 jobservice:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-jobservice
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-jobservice
 
 registry:
   registry:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registry
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-registry
 
 trivy:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-trivy-adapter
+    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-trivy-adapter
 
 notary:
   server:
@@ -34,17 +34,17 @@ notary:
 database:
   internal:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-db
 
 redis:
   internal:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-redis
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-redis
 
 tests:
   api:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-test
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-test
     dind:
       image:
-        repository: registry.suse.de/devel/caps/registry/containers/registry/docker-dind
+        repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/docker-dind
