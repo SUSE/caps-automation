@@ -355,8 +355,8 @@ proxy:
 # If expose the service via "ingress", the Nginx will not be used
 nginx:
   image:
-    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-nginx
-    tag: 2.0.2-rev1
+    repository: registry.suse.com/registry/harbor-nginx
+    tag: 2.0.2
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -372,8 +372,8 @@ nginx:
 
 portal:
   image:
-    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-portal
-    tag: 2.0.2-rev1
+    repository: registry.suse.com/registry/harbor-portal
+    tag: 2.0.2
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -389,8 +389,8 @@ portal:
 
 core:
   image:
-    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-core
-    tag: 2.0.2-rev1
+    repository: registry.suse.com/registry/harbor-core
+    tag: 2.0.2
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -422,8 +422,8 @@ core:
 
 jobservice:
   image:
-    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-jobservice
-    tag: 2.0.2-rev1
+    repository: registry.suse.com/registry/harbor-jobservice
+    tag: 2.0.2
   replicas: 1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
@@ -449,8 +449,8 @@ registry:
   serviceAccountName: ""
   registry:
     image:
-      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-registry
-      tag: 2.0.2-rev1
+      repository: registry.suse.com/registry/harbor-registry
+      tag: 2.0.2
 
     # resources:
     #  requests:
@@ -458,8 +458,8 @@ registry:
     #    cpu: 100m
   controller:
     image:
-      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-registryctl
-      tag: 2.0.2-rev1
+      repository: registry.suse.com/registry/harbor-registryctl
+      tag: 2.0.2
 
     # resources:
     #  requests:
@@ -555,9 +555,9 @@ trivy:
   enabled: true
   image:
     # repository the repository for Trivy adapter image
-    repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-trivy-adapter
+    repository: registry.suse.com/registry/harbor-trivy-adapter
     # tag the tag for Trivy adapter image
-    tag: 2.0.2-rev1
+    tag: 2.0.2
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   # replicas the number of Pod replicas
@@ -649,8 +649,8 @@ database:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-db
-      tag: 2.0.2-rev1
+      repository: registry.suse.com/registry/harbor-db
+      tag: 2.0.2
     # The initial superuser password for internal database
     password: "changeit"
     # resources:
@@ -695,8 +695,8 @@ redis:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-redis
-      tag: 2.0.2-rev1
+      repository: registry.suse.com/registry/harbor-redis
+      tag: 2.0.2
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -735,16 +735,16 @@ tests:
     exclude:
       - singularity # CLI not yet included in the harbor-test-image
     image:
-      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-test
-      tag: 2.0.2-rev1
+      repository: registry.suse.com/registry/harbor-test
+      tag: 2.0.2
     # resources:
     #  requests:
     #    memory: 128Mi
     #    cpu: 100m
     dind:
       image:
-        repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/docker-dind
-        tag: 2.0.2-rev1
+        repository: registry.suse.com/registry/docker-dind
+        tag: 2.0.2
       # resources:
       #  requests:
       #    memory: 128Mi
