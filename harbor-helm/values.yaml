@@ -350,8 +350,8 @@ proxy:
 # If expose the service via "ingress", the Nginx will not be used
 nginx:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-nginx
-    tag: 2.0.0-rev1
+    repository: registry.suse.com/registry/harbor-nginx
+    tag: 2.0.0
   replicas: 1
   # resources:
   #  requests:
@@ -365,8 +365,8 @@ nginx:
 
 portal:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-portal
-    tag: 2.0.0-rev1
+    repository: registry.suse.com/registry/harbor-portal
+    tag: 2.0.0
   replicas: 1
 # resources:
 #  requests:
@@ -380,8 +380,8 @@ portal:
 
 core:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-core
-    tag: 2.0.0-rev1
+    repository: registry.suse.com/registry/harbor-core
+    tag: 2.0.0
   replicas: 1
   ## Liveness probe values
   livenessProbe:
@@ -411,8 +411,8 @@ core:
 
 jobservice:
   image:
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-jobservice
-    tag: 2.0.0-rev1
+    repository: registry.suse.com/registry/harbor-jobservice
+    tag: 2.0.0
   replicas: 1
   maxJobWorkers: 10
   # The logger for jobs: "file", "database" or "stdout"
@@ -434,8 +434,8 @@ jobservice:
 registry:
   registry:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registry
-      tag: 2.0.0-rev1
+      repository: registry.suse.com/registry/harbor-registry
+      tag: 2.0.0
 
     # resources:
     #  requests:
@@ -443,8 +443,8 @@ registry:
     #    cpu: 100m
   controller:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-registryctl
-      tag: 2.0.0-rev1
+      repository: registry.suse.com/registry/harbor-registryctl
+      tag: 2.0.0
 
     # resources:
     #  requests:
@@ -534,9 +534,9 @@ trivy:
   enabled: false
   image:
     # repository the repository for Trivy adapter image
-    repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-trivy-adapter
+    repository: registry.suse.com/registry/harbor-trivy-adapter
     # tag the tag for Trivy adapter image
-    tag: 2.0.0-rev1
+    tag: 2.0.0
   # replicas the number of Pod replicas
   replicas: 1
   # debugMode the flag to enable Trivy debug mode with more verbose scanning log
@@ -620,8 +620,8 @@ database:
   type: internal
   internal:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-db
-      tag: 2.0.0-rev1
+      repository: registry.suse.com/registry/harbor-db
+      tag: 2.0.0
     # The initial superuser password for internal database
     password: "changeit"
     # resources:
@@ -664,8 +664,8 @@ redis:
   type: internal
   internal:
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-redis
-      tag: 2.0.0-rev1
+      repository: registry.suse.com/registry/harbor-redis
+      tag: 2.0.0
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -703,16 +703,16 @@ tests:
     # harbor enabled services/features.
     exclude: []
     image:
-      repository: registry.suse.de/devel/caps/registry/containers/registry/harbor-test
-      tag: 2.0.0-rev1
+      repository: registry.suse.com/registry/harbor-test
+      tag: 2.0.0
     # resources:
     #  requests:
     #    memory: 128Mi
     #    cpu: 100m
     dind:
       image:
-        repository: registry.suse.de/devel/caps/registry/containers/registry/docker-dind
-        tag: 2.0.0-rev1
+        repository: registry.suse.com/registry/docker-dind
+        tag: 2.0.0
       # resources:
       #  requests:
       #    memory: 128Mi
