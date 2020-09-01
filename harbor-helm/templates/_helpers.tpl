@@ -614,8 +614,6 @@ host:port,pool_size,password
   {{- end -}}
   {{- if not .Values.trivy.enabled -}}
     {{- $el = append $el "push_index" -}}
-  {{- end -}}
-  {{- if or (not .Values.trivy.enabled) (not .Values.clair.enabled) -}}
     {{- $el = append $el "scan" -}}
     {{- $el = append $el "scan_all" -}}
   {{- end -}}
