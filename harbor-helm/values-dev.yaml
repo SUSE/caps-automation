@@ -18,6 +18,9 @@ registry:
   registry:
     image:
       repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-registry
+  controller:
+    image:
+      repository: registry.suse.de/devel/caps/registry/2.0/containers/registry/harbor-registryctl
 
 trivy:
   image:
