@@ -605,13 +605,13 @@ trivy:
   podAnnotations: {}
 
 notary:
-  enabled: false
+  enabled: true
   server:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: goharbor/notary-server-photon
-      tag: v2.0.2
+      repository: registry.suse.com/registry/harbor-notary-server
+      tag: 2.0.2
     replicas: 1
     # resources:
     #  requests:
@@ -621,8 +621,8 @@ notary:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: goharbor/notary-signer-photon
-      tag: v2.0.2
+      repository: registry.suse.com/registry/harbor-notary-signer
+      tag: 2.0.2
     replicas: 1
     # resources:
     #  requests:
