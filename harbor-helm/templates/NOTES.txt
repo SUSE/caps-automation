@@ -1,2 +1,3 @@
+{{- required "Please review https://documentation.suse.com/beta/eula and to accept, add --set suse.AcceptBetaEULA=y on your helm invocation" .Values.suse.AcceptBetaEULA }}
 Please wait for several minutes for Harbor deployment to complete.
 Then you should be able to visit the Harbor portal at {{ .Values.externalURL }}
