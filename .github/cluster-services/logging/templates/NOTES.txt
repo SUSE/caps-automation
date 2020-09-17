@@ -1,0 +1,1 @@
+Logs are available at: https://{{ index .Values.kibana.ingress.hosts 0 }}

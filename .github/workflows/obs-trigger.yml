@@ -1,0 +1,51 @@
+name: "[Trigger] OBS Build"
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [obs-build-trigger]
+
+jobs:
+  watch_projects:
+    name: Watching projects build
+    runs-on: ecosystem-ci-runners
+    container:
+      image: "opensuse/leap:15.2"
+    timeout-minutes: 1460
+    env:
+      PROJECTS: >
+        Devel:CAPS:Registry:2.0
+        SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:2.0
+        SUSE:Containers:CAPS:2
+        Devel:CAPS:Registry:2.1
+        SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:2.1
+    steps:
+      - name: Install requirements
+        run: |
+          zypper ar --refresh http://download.suse.de/ibs/SUSE:/CA/openSUSE_Leap_15.2/SUSE:CA.repo
+          zypper -n in ca-certificates-suse gzip osclib python3-pika tar
+          ln -s /usr/share/openSUSE-release-tools/osclib /usr/lib64/python3.6/site-packages/osclib
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Generate OSC config
+        env:
+          osc_config_dir: /root/.config/osc
+          sec_osc_config: ${{ secrets.OSC_CONFIG }}
+        run: |
+          mkdir -p ${osc_config_dir}
+          echo "${sec_osc_config}" | base64 -d > ${osc_config_dir}/oscrc
+          echo "::set-env name=OSC_CONFIG::${osc_config_dir}/oscrc"
+
+      - name: "Watching projects..."
+        run: |
+          echo "::warning ::Watching projects: ${{ env.PROJECTS }}"
+          ./.github/scripts/obs-watcher.py -A https://api.suse.de -r ${{ github.repository }}  \
+            -t ${{ secrets.GIT_PAT }} ${{ env.PROJECTS }}
+
+      - name: Trigger this job again
+        if: success() || failure()
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.GIT_PAT }}
+          event-type: obs-build-trigger
