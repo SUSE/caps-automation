@@ -361,7 +361,7 @@ proxy:
 # If expose the service via "ingress", the Nginx will not be used
 nginx:
   image:
-    repository: registry.suse.com/registry/harbor-nginx
+    repository: registry.suse.com/harbor/harbor-nginx
     tag: 2.0.2
   # set the service account to be used, default if left empty
   serviceAccountName: ""
@@ -378,7 +378,7 @@ nginx:
 
 portal:
   image:
-    repository: registry.suse.com/registry/harbor-portal
+    repository: registry.suse.com/harbor/harbor-portal
     tag: 2.0.2
   # set the service account to be used, default if left empty
   serviceAccountName: ""
@@ -395,7 +395,7 @@ portal:
 
 core:
   image:
-    repository: registry.suse.com/registry/harbor-core
+    repository: registry.suse.com/harbor/harbor-core
     tag: 2.0.2
   # set the service account to be used, default if left empty
   serviceAccountName: ""
@@ -428,7 +428,7 @@ core:
 
 jobservice:
   image:
-    repository: registry.suse.com/registry/harbor-jobservice
+    repository: registry.suse.com/harbor/harbor-jobservice
     tag: 2.0.2
   replicas: 1
   # set the service account to be used, default if left empty
@@ -455,7 +455,7 @@ registry:
   serviceAccountName: ""
   registry:
     image:
-      repository: registry.suse.com/registry/harbor-registry
+      repository: registry.suse.com/harbor/harbor-registry
       tag: 2.0.2
 
     # resources:
@@ -464,7 +464,7 @@ registry:
     #    cpu: 100m
   controller:
     image:
-      repository: registry.suse.com/registry/harbor-registryctl
+      repository: registry.suse.com/harbor/harbor-registryctl
       tag: 2.0.2
 
     # resources:
@@ -561,7 +561,7 @@ trivy:
   enabled: true
   image:
     # repository the repository for Trivy adapter image
-    repository: registry.suse.com/registry/harbor-trivy-adapter
+    repository: registry.suse.com/harbor/harbor-trivy-adapter
     # tag the tag for Trivy adapter image
     tag: 2.0.2
   # set the service account to be used, default if left empty
@@ -655,7 +655,7 @@ database:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: registry.suse.com/registry/harbor-db
+      repository: registry.suse.com/harbor/harbor-db
       tag: 2.0.2
     # The initial superuser password for internal database
     password: "changeit"
@@ -701,7 +701,7 @@ redis:
     # set the service account to be used, default if left empty
     serviceAccountName: ""
     image:
-      repository: registry.suse.com/registry/harbor-redis
+      repository: registry.suse.com/harbor/harbor-redis
       tag: 2.0.2
     # resources:
     #  requests:
@@ -741,7 +741,7 @@ tests:
     exclude:
       - singularity # CLI not yet included in the harbor-test-image
     image:
-      repository: registry.suse.com/registry/harbor-test
+      repository: registry.suse.com/harbor/harbor-test
       tag: 2.0.2
     # resources:
     #  requests:
@@ -749,7 +749,7 @@ tests:
     #    cpu: 100m
     dind:
       image:
-        repository: registry.suse.com/registry/docker-dind
+        repository: registry.suse.com/harbor/docker-dind
         tag: 2.0.2
       # resources:
       #  requests:
