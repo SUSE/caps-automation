@@ -113,10 +113,10 @@ jobs:
           helm test -n $namespace $release_name --timeout 30m &
           helm_test_pid=$!
           test_pods=$(helm status -n $namespace $release_name -o json | jq -r .hooks[].name)
-          until kubectl exec -n $namespace $test_pods "--" pgrep pybot &> /dev/null; do
+          until kubectl exec -n $namespace $test_pods "--" pgrep "pybot|robot" &> /dev/null; do
             sleep 1
           done
-          while kubectl exec -n $namespace $test_pods "--" pgrep pybot &> /dev/null; do
+          while kubectl exec -n $namespace $test_pods "--" pgrep "pybot|robot" &> /dev/null; do
             sleep 1
           done
           kubectl cp -n $namespace $test_pods:/var/lib/harbor-test/output.xml output.xml
