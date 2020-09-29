@@ -35,6 +35,9 @@ spec:
 {{ toYaml .Values.jobservice.podAnnotations | indent 8 }}
 {{- end }}
     spec:
+{{- if .Values.jobservice.serviceAccountName }}
+      serviceAccountName: {{ .Values.jobservice.serviceAccountName }}
+{{- end -}}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -102,6 +105,9 @@ spec:
           mountPath: /etc/harbor/ssl/job_service.key
           subPath: tls.key
         {{- end }}
+        {{- if .Values.caBundleSecretName }}
+{{ include "harbor.caBundleVolumeMount" . | indent 8 }}
+        {{- end }}
       volumes:
       - name: jobservice-config
         configMap:
@@ -117,6 +123,9 @@ spec:
       - name: jobservice-internal-certs
         secret:
           secretName: {{ template "harbor.internalTLS.jobservice.secretName" . }}
+      {{- end }}
+      {{- if .Values.caBundleSecretName }}
+{{ include "harbor.caBundleVolume" . | indent 6 }}
       {{- end }}
     {{- with .Values.jobservice.nodeSelector }}
       nodeSelector:

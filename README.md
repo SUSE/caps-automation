@@ -1,1 +1,1 @@
-All things related to SUSE registry.
+All things related to SUSE Private Registry.

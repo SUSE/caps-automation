@@ -28,6 +28,10 @@ spec:
       env:
         - name: HARBOR_IP
           value: {{ .Values.externalURL | replace "https://" "" }}
+        {{- if and .Values.notary.enabled (eq .Values.expose.type "ingress") }}
+        - name: NOTARY_URL
+          value: https://{{ .Values.expose.ingress.hosts.notary }}
+        {{- end }}
         - name: ROBOT_OPTIONS
           value: "{{ template "harbor.tests.api.options" . }}"
         - name: DOCKER_HOST
