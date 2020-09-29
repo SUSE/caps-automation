@@ -362,7 +362,7 @@ proxy:
 nginx:
   image:
     repository: registry.suse.com/harbor/harbor-nginx
-    tag: 2.0.2
+    tag: 2.0.3
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -379,7 +379,7 @@ nginx:
 portal:
   image:
     repository: registry.suse.com/harbor/harbor-portal
-    tag: 2.0.2
+    tag: 2.0.3
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -396,7 +396,7 @@ portal:
 core:
   image:
     repository: registry.suse.com/harbor/harbor-core
-    tag: 2.0.2
+    tag: 2.0.3
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   replicas: 1
@@ -429,7 +429,7 @@ core:
 jobservice:
   image:
     repository: registry.suse.com/harbor/harbor-jobservice
-    tag: 2.0.2
+    tag: 2.0.3
   replicas: 1
   # set the service account to be used, default if left empty
   serviceAccountName: ""
@@ -456,7 +456,7 @@ registry:
   registry:
     image:
       repository: registry.suse.com/harbor/harbor-registry
-      tag: 2.0.2
+      tag: 2.0.3
 
     # resources:
     #  requests:
@@ -465,7 +465,7 @@ registry:
   controller:
     image:
       repository: registry.suse.com/harbor/harbor-registryctl
-      tag: 2.0.2
+      tag: 2.0.3
 
     # resources:
     #  requests:
@@ -512,7 +512,7 @@ chartmuseum:
   absoluteUrl: false
   image:
     repository: goharbor/chartmuseum-photon
-    tag: v2.0.2
+    tag: v2.0.3
   replicas: 1
   # resources:
   #  requests:
@@ -531,7 +531,7 @@ clair:
   clair:
     image:
       repository: goharbor/clair-photon
-      tag: v2.0.2
+      tag: v2.0.3
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -539,7 +539,7 @@ clair:
   adapter:
     image:
       repository: goharbor/clair-adapter-photon
-      tag: v2.0.2
+      tag: v2.0.3
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -561,7 +561,7 @@ trivy:
     # repository the repository for Trivy adapter image
     repository: registry.suse.com/harbor/harbor-trivy-adapter
     # tag the tag for Trivy adapter image
-    tag: 2.0.2
+    tag: 2.0.3
   # set the service account to be used, default if left empty
   serviceAccountName: ""
   # replicas the number of Pod replicas
@@ -615,7 +615,7 @@ notary:
     serviceAccountName: ""
     image:
       repository: registry.suse.com/harbor/harbor-notary-server
-      tag: 2.0.2
+      tag: 2.0.3
     replicas: 1
     # resources:
     #  requests:
@@ -626,7 +626,7 @@ notary:
     serviceAccountName: ""
     image:
       repository: registry.suse.com/harbor/harbor-notary-signer
-      tag: 2.0.2
+      tag: 2.0.3
     replicas: 1
     # resources:
     #  requests:
@@ -654,7 +654,7 @@ database:
     serviceAccountName: ""
     image:
       repository: registry.suse.com/harbor/harbor-db
-      tag: 2.0.2
+      tag: 2.0.3
     # The initial superuser password for internal database
     password: "changeit"
     # resources:
@@ -700,7 +700,7 @@ redis:
     serviceAccountName: ""
     image:
       repository: registry.suse.com/harbor/harbor-redis
-      tag: 2.0.2
+      tag: 2.0.3
     # resources:
     #  requests:
     #    memory: 256Mi
@@ -740,7 +740,7 @@ tests:
       - singularity # CLI not yet included in the harbor-test-image
     image:
       repository: registry.suse.com/harbor/harbor-test
-      tag: 2.0.2
+      tag: 2.0.3
     # resources:
     #  requests:
     #    memory: 128Mi
@@ -748,7 +748,7 @@ tests:
     dind:
       image:
         repository: registry.suse.com/harbor/docker-dind
-        tag: 2.0.2
+        tag: 2.0.3
       # resources:
       #  requests:
       #    memory: 128Mi
