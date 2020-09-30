@@ -36,7 +36,7 @@ jobs:
             schedule|workflow_dispatch)
               echo "::set-output name=env_ref::release-2.1"
               echo "::set-output name=env_name::periodic-2.1"
-              echo "::set-env name=NAMESPACE::spr20-sched-${{ matrix.source }}"
+              echo "::set-env name=NAMESPACE::spr21-sched-${{ matrix.source }}"
               ;;
             *)
               echo "::error::Trigger event ${GITHUB_EVENT_NAME} not supported by this workflow"
