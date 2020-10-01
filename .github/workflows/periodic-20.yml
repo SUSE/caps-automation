@@ -87,9 +87,10 @@ jobs:
         env:
           HELM_EXPERIMENTAL_OCI: 1
         run: |
+          chart="./harbor"
+          rm -rf ${chart}
           helm chart pull ${{ matrix.install_src }}/charts/registry/harbor:latest
           helm chart export ${{ matrix.install_src }}/charts/registry/harbor:latest
-          chart="./harbor"
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.install_src }}/containers,g' ${chart}/values.yaml
           helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
@@ -98,9 +99,10 @@ jobs:
         env:
           HELM_EXPERIMENTAL_OCI: 1
         run: |
+          chart="./harbor"
+          rm -rf ${chart}
           helm chart pull ${{ matrix.upgrade_src }}/charts/registry/harbor:latest
           helm chart export ${{ matrix.upgrade_src }}/charts/registry/harbor:latest
-          chart="./harbor"
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.upgrade_src }}/containers,g' ${chart}/values.yaml
           helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
