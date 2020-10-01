@@ -1,4 +1,4 @@
-name: "SUSE Private Registry:2.0"
+name: "SUSE Private Registry:2.1"
 on:
   workflow_dispatch:
   schedule:
@@ -11,32 +11,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # devel   -> Devel:CAPS:Registry:2.0
-        # suse    -> SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:2.0
+        # devel   -> Devel:CAPS:Registry:2.1
+        # suse    -> SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:2.1
         # release -> SUSE:Containers:CAPS:2
         source: [devel, suse, release, release-to-devel, release-to-suse]
         include:
           - source: devel
-            install_src: registry.suse.de/devel/caps/registry/2.0
+            install_src: registry.suse.de/devel/caps/registry/2.1
           - source: suse
-            install_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.0
+            install_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.1
           - source: release
             install_src: registry.suse.de/suse/containers/caps/2
           - source: release-to-devel
             install_src: registry.suse.de/suse/containers/caps/2
-            upgrade_src: registry.suse.de/devel/caps/registry/2.0
+            upgrade_src: registry.suse.de/devel/caps/registry/2.1
           - source: release-to-suse
             install_src: registry.suse.de/suse/containers/caps/2
-            upgrade_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.0
+            upgrade_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.1
     steps:
       - name: Setup environment for job triggered by ${{ github.event_name }}
         id: setup
         run: |
           case "${GITHUB_EVENT_NAME}" in
             schedule|workflow_dispatch)
-              echo "::set-output name=env_ref::release-2.0"
-              echo "::set-output name=env_name::periodic-2.0"
-              echo "::set-env name=NAMESPACE::spr20-sched-${{ matrix.source }}"
+              echo "::set-output name=env_ref::release-2.1"
+              echo "::set-output name=env_name::periodic-2.1"
+              echo "::set-env name=NAMESPACE::spr21-sched-${{ matrix.source }}"
               ;;
             *)
               echo "::error::Trigger event ${GITHUB_EVENT_NAME} not supported by this workflow"
@@ -64,6 +64,8 @@ jobs:
       - name: Generate helm values file for CI
         run: |
           cat << EOF | tee ${NAMESPACE}.yaml
+          suse:
+            AcceptBetaEULA: "yes"
           expose:
             ingress:
               hosts:
@@ -168,4 +170,3 @@ jobs:
           env_url: https://${{ env.NAMESPACE }}.${{ env.INGRESS_IP }}.nip.io
           logs: https://${{ env.NAMESPACE }}.${{ env.INGRESS_IP }}.nip.io
           deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-

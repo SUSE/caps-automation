@@ -1,6 +1,6 @@
-#!BuildTag: registry/harbor:latest
-#!BuildTag: registry/harbor:1.5.0
-#!BuildTag: registry/harbor:1.5.0-build%RELEASE%
+#!BuildTag: harbor/harbor:1.5
+#!BuildTag: harbor/harbor:1.5.0
+#!BuildTag: harbor/harbor:1.5.0-build%RELEASE%
 apiVersion: v1
 name: harbor
 version: 1.5.0
