@@ -18,16 +18,23 @@ jobs:
         include:
           - source: devel
             install_src: registry.suse.de/devel/caps/registry/2.0
+            install_src_suffix: harbor/harbor:1.4
           - source: suse
             install_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.0
+            install_src_suffix: registry/harbor:latest
           - source: release
             install_src: registry.suse.de/suse/containers/caps/2
+            install_src_suffix: registry/harbor:latest
           - source: release-to-devel
             install_src: registry.suse.de/suse/containers/caps/2
+            install_src_suffix: registry/harbor:latest
             upgrade_src: registry.suse.de/devel/caps/registry/2.0
+            upgrade_src_suffix: harbor/harbor:1.4
           - source: release-to-suse
             install_src: registry.suse.de/suse/containers/caps/2
+            install_src_suffix: registry/harbor:latest
             upgrade_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.0
+            upgrade_src_suffix: registry/harbor:latest
     steps:
       - name: Setup environment for job triggered by ${{ github.event_name }}
         id: setup
@@ -89,11 +96,11 @@ jobs:
         run: |
           chart="./harbor"
           rm -rf ${chart}
-          helm chart pull ${{ matrix.install_src }}/charts/registry/harbor:latest
-          helm chart export ${{ matrix.install_src }}/charts/registry/harbor:latest
+          helm chart pull ${{ matrix.install_src }}/charts/${{ matrix.install_src_suffix }}
+          helm chart export ${{ matrix.install_src }}/charts/${{ matrix.install_src_suffix }}
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.install_src }}/containers,g' ${chart}/values.yaml
-          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
+          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait --set suse.AcceptBetaEULA=yes
       - name: SUSE Private Registry (upgrade)
         if: matrix.upgrade_src
         env:
@@ -101,11 +108,11 @@ jobs:
         run: |
           chart="./harbor"
           rm -rf ${chart}
-          helm chart pull ${{ matrix.upgrade_src }}/charts/registry/harbor:latest
-          helm chart export ${{ matrix.upgrade_src }}/charts/registry/harbor:latest
+          helm chart pull ${{ matrix.upgrade_src }}/charts/${{ matrix.upgrade_src_suffix }}
+          helm chart export ${{ matrix.upgrade_src }}/charts/${{ matrix.upgrade_src_suffix }}
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.upgrade_src }}/containers,g' ${chart}/values.yaml
-          helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
+          helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait --set suse.AcceptBetaEULA=yes
       - name: Run tests
         id: run_tests
         run: |
