@@ -100,7 +100,7 @@ jobs:
           helm chart export ${{ matrix.install_src }}/charts/${{ matrix.install_src_suffix }}
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.install_src }}/containers,g' ${chart}/values.yaml
-          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
+          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait --set suse.AcceptBetaEULA=yes
       - name: SUSE Private Registry (upgrade)
         if: matrix.upgrade_src
         env:
@@ -112,7 +112,7 @@ jobs:
           helm chart export ${{ matrix.upgrade_src }}/charts/${{ matrix.upgrade_src_suffix }}
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.upgrade_src }}/containers,g' ${chart}/values.yaml
-          helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
+          helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait --set suse.AcceptBetaEULA=yes
       - name: Run tests
         id: run_tests
         run: |
