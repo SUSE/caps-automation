@@ -637,7 +637,7 @@ notary:
     serviceAccountName: ""
     image:
       repository: registry.suse.com/harbor/harbor-notary-server
-      tag: v2.1.0
+      tag: 2.1.0
     replicas: 1
     # resources:
     #  requests:
@@ -648,7 +648,7 @@ notary:
     serviceAccountName: ""
     image:
       repository: registry.suse.com/harbor/harbor-notary-signer
-      tag: v2.1.0
+      tag: 2.1.0
     replicas: 1
     # resources:
     #  requests:
