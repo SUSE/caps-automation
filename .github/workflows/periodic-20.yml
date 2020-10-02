@@ -71,11 +71,15 @@ jobs:
       - name: Generate helm values file for CI
         run: |
           cat << EOF | tee ${NAMESPACE}.yaml
+          suse:
+            AcceptBetaEULA: "yes"
           expose:
             ingress:
               hosts:
                 core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
           externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
+          trivy:
+            gitHubToken: "${{ secrets.GITHUB_TOKEN }}"
           updateStrategy:
             type: Recreate
           internalTLS:
@@ -100,7 +104,7 @@ jobs:
           helm chart export ${{ matrix.install_src }}/charts/${{ matrix.install_src_suffix }}
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.install_src }}/containers,g' ${chart}/values.yaml
-          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait --set suse.AcceptBetaEULA=yes
+          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
       - name: SUSE Private Registry (upgrade)
         if: matrix.upgrade_src
         env:
@@ -112,7 +116,7 @@ jobs:
           helm chart export ${{ matrix.upgrade_src }}/charts/${{ matrix.upgrade_src_suffix }}
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.upgrade_src }}/containers,g' ${chart}/values.yaml
-          helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait --set suse.AcceptBetaEULA=yes
+          helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
       - name: Run tests
         id: run_tests
         run: |
