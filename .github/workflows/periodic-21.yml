@@ -71,6 +71,8 @@ jobs:
               hosts:
                 core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
           externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
+          trivy:
+            gitHubToken: "${{ secrets.GITHUB_TOKEN }}"
           updateStrategy:
             type: Recreate
           internalTLS:
