@@ -771,12 +771,4 @@ tests:
     #  requests:
     #    memory: 128Mi
     #    cpu: 100m
-    dind:
-      image:
-        repository: registry.suse.com/harbor/docker-dind
-        tag: 2.1.0
-      # resources:
-      #  requests:
-      #    memory: 128Mi
-      #    cpu: 100m
     podAnnotations: {}
