@@ -64,8 +64,6 @@ jobs:
       - name: Generate helm values file for CI
         run: |
           cat << EOF | tee ${NAMESPACE}.yaml
-          suse:
-            AcceptBetaEULA: "yes"
           expose:
             ingress:
               hosts:
