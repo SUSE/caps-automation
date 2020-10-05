@@ -69,6 +69,9 @@ jobs:
               hosts:
                 core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
           externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
+          core:
+            # Set the GC time window to 0 for the GC tests to pass
+            gcTimeWindowHours: 0
           trivy:
             gitHubToken: "${{ secrets.GITHUB_TOKEN }}"
           updateStrategy:
