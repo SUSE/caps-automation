@@ -80,6 +80,7 @@ jobs:
             ingress:
               hosts:
                 core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
+                notary: ${NAMESPACE}.notary.${INGRESS_IP}.nip.io
           externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
           core:
             # Set the GC time window to 0 for the GC tests to pass
