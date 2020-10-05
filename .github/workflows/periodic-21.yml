@@ -14,20 +14,32 @@ jobs:
         # devel   -> Devel:CAPS:Registry:2.1
         # suse    -> SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:2.1
         # release -> SUSE:Containers:CAPS:2
-        source: [devel, suse, release, release-to-devel, release-to-suse]
+        source: [devel, 20-to-devel]
         include:
           - source: devel
             install_src: registry.suse.de/devel/caps/registry/2.1
-          - source: suse
-            install_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.1
-          - source: release
+            install_src_suffix: harbor/harbor:1.5
+#          - source: suse
+#            install_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.1
+#            install_src_suffix: harbor/harbor:1.5
+#          - source: release
+#            install_src: registry.suse.de/suse/containers/caps/2.1
+#            install_src_suffix: harbor/harbor:1.5
+#          - source: release-to-devel
+#            install_src: registry.suse.de/suse/containers/caps/2.1
+#            install_src_suffix: harbor/harbor:1.5
+#            upgrade_src: registry.suse.de/devel/caps/registry/2.1
+#            upgrade_src_suffix: harbor/harbor:1.5
+#          - source: release-to-suse
+#            install_src: registry.suse.de/suse/containers/caps/2.1
+#            install_src_suffix: harbor/harbor:1.5
+#            upgrade_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.1
+#            upgrade_src_suffix: harbor/harbor:1.5
+          - source: 20-to-devel
             install_src: registry.suse.de/suse/containers/caps/2
-          - source: release-to-devel
-            install_src: registry.suse.de/suse/containers/caps/2
+            install_src_suffix: registry/harbor:latest
             upgrade_src: registry.suse.de/devel/caps/registry/2.1
-          - source: release-to-suse
-            install_src: registry.suse.de/suse/containers/caps/2
-            upgrade_src: registry.suse.de/suse/sle-15-sp2/update/products/caps-registry/2.1
+            upgrade_src_suffix: harbor/harbor:1.5
     steps:
       - name: Setup environment for job triggered by ${{ github.event_name }}
         id: setup
@@ -94,8 +106,8 @@ jobs:
         run: |
           chart="./harbor"
           rm -rf ${chart}
-          helm chart pull ${{ matrix.install_src }}/charts/registry/harbor:1.5
-          helm chart export ${{ matrix.install_src }}/charts/registry/harbor:1.5
+          helm chart pull ${{ matrix.install_src }}/charts/${{ matrix.install_src_suffix }}
+          helm chart export ${{ matrix.install_src }}/charts/${{ matrix.install_src_suffix }}
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.install_src }}/containers,g' ${chart}/values.yaml
           helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
@@ -106,8 +118,8 @@ jobs:
         run: |
           chart="./harbor"
           rm -rf ${chart}
-          helm chart pull ${{ matrix.upgrade_src }}/charts/registry/harbor:1.5
-          helm chart export ${{ matrix.upgrade_src }}/charts/registry/harbor:1.5
+          helm chart pull ${{ matrix.upgrade_src }}/charts/${{ matrix.upgrade_src_suffix }}
+          helm chart export ${{ matrix.upgrade_src }}/charts/${{ matrix.upgrade_src_suffix }}
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.upgrade_src }}/containers,g' ${chart}/values.yaml
           helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
