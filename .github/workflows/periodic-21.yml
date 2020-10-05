@@ -69,6 +69,9 @@ jobs:
               hosts:
                 core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
           externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
+          core:
+            # Set the GC time window to 0 for the GC tests to pass
+            gcTimeWindowHours: 0
           trivy:
             gitHubToken: "${{ secrets.GITHUB_TOKEN }}"
           updateStrategy:
@@ -91,8 +94,8 @@ jobs:
         run: |
           chart="./harbor"
           rm -rf ${chart}
-          helm chart pull ${{ matrix.install_src }}/charts/registry/harbor:latest
-          helm chart export ${{ matrix.install_src }}/charts/registry/harbor:latest
+          helm chart pull ${{ matrix.install_src }}/charts/registry/harbor:1.5
+          helm chart export ${{ matrix.install_src }}/charts/registry/harbor:1.5
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.install_src }}/containers,g' ${chart}/values.yaml
           helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
@@ -103,8 +106,8 @@ jobs:
         run: |
           chart="./harbor"
           rm -rf ${chart}
-          helm chart pull ${{ matrix.upgrade_src }}/charts/registry/harbor:latest
-          helm chart export ${{ matrix.upgrade_src }}/charts/registry/harbor:latest
+          helm chart pull ${{ matrix.upgrade_src }}/charts/registry/harbor:1.5
+          helm chart export ${{ matrix.upgrade_src }}/charts/registry/harbor:1.5
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ matrix.upgrade_src }}/containers,g' ${chart}/values.yaml
           helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 8m --wait
