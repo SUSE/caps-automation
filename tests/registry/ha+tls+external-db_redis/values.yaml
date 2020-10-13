@@ -1,0 +1,62 @@
+expose:
+  tls:
+    certSource: secret
+    secret:
+      secretName: core-tls
+      notarySecretName: notary-tls
+  ingress:
+    hosts:
+      core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
+      notary: "notary.${NAMESPACE}.${INGRESS_IP}.nip.io"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
+harborAdminPassword: "Harbor12345"
+internalTLS:
+  enabled: true
+imagePullPolicy: Always
+  
+persistence:
+  persistentVolumeClaim:
+    jobservice:
+      storageClass: ${k8s_storageclass}
+      accessMode: ReadWriteMany
+    trivy:
+      storageClass: ${k8s_storageclass}
+      accessMode: ReadWriteMany
+  imageChartStorage:
+    type: ${type}
+    azure:
+      accountname: ${object_storage_account_name}
+      accountkey: "${object_storage_access_key}"
+      container: ${object_storage_container_name}
+
+portal:
+  replicas: 2
+core:
+  replicas: 2
+  # Set the GC time window to 0 for the GC tests to pass
+  gcTimeWindowHours: 0
+jobservice:
+  replicas: 2
+registry:
+  replicas: 2
+trivy:
+  replicas: 2
+  gitHubToken: "${github_token}"
+notary:
+  replicas: 2
+
+database:
+  type: external
+  external:
+    host: "${db_fqdn}"
+    username: "${db_login}"
+    password: "${db_password}"
+    sslmode: "verify-full"
+
+redis:
+  type: external
+  external:
+    addr: "${redis_fqdn}:6379"
+    password: "${redis_password}"
