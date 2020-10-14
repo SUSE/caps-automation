@@ -1,126 +1,175 @@
-name: "[CaaSP 4] Rotate Cluster"
+name: "Rotate Kubernetes cluster"
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 4 * * *"
 
 jobs:
-  redeploy_caasp_cluster:
-    name: Redeploy and set active cluster
+  caasp:
+    name: Rotate CaaSP cluster
     runs-on: ecosystem-ci-runners
     env:
-      CLUSTER_PREFIX: registry-ci
       NUMBER_OF_CLUSTERS: 2
       GH_API_HEADER: "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
+    defaults:
+      run:
+        working-directory: deploy_caasp
     steps:
-      - name: Find out which cluster to redeploy
-        id: get_cluster
+      - name: Setup workspace
         run: |
+          if [ ! -d "deploy_caasp" ]; then
+            mkdir deploy_caasp
+          fi
+        working-directory: .
+
+      - name: Fetch previous deployment cluster-id artifact
+        id: fetch_artifacts
+        run: |
+          rm -rf CLUSTER_ID
           artifact_name=cluster-id
-          previous_runs_artifacts_url=$(curl -sH "${GH_API_HEADER}" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/cluster-rotate.yml/runs\?status\=completed \
-             | jq -r ".workflow_runs[].artifacts_url")
-          for artifact_url in "${previous_runs_artifacts_url}"; do
-            cluster_id_artifact_download_url=$(curl -sH "${GH_API_HEADER}" ${artifact_url} \
+          previous_runs_artifacts_url="$(curl -sH "${GH_API_HEADER}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/cluster-rotate.yml/runs?status=completed" \
+            | jq -r ".workflow_runs[].artifacts_url")"
+          for artifact_url in ${previous_runs_artifacts_url}; do
+            cluster_id_artifact_download_url=$(curl -sH "${GH_API_HEADER}" "${artifact_url}" \
               | jq -rc ".artifacts[] | select(.name==\"${artifact_name}\") | .archive_download_url")
-            if [[ ! -z "${cluster_id_artifact_download_url}" ]]; then
+            if [[ ! -z ${cluster_id_artifact_download_url} ]]; then
+              wget --header="${GH_API_HEADER}" "${cluster_id_artifact_download_url}" -O ${artifact_name}.zip
+              unzip -o ${artifact_name}.zip
               break
             fi
           done
-          cluster_id=1
-          if [[ ! -z "${cluster_id_artifact_download_url}" ]]; then
-            curl -sLH "${GH_API_HEADER}" ${cluster_id_artifact_download_url} --output ${artifact_name}.zip
-            unzip -o ${artifact_name}.zip
-            active_cluster_id=$(cat CLUSTER_ID)
-            echo "::set-env name=ACTIVE_CLUSTER_ID::${active_cluster_id}"
-            if [[ -z "${active_cluster_id}" || ${active_cluster_id} = ${NUMBER_OF_CLUSTERS} ]]; then
-              cluster_id=1
-            else
-              cluster_id=$(($active_cluster_id + 1))
-            fi
-          fi
-          echo ${cluster_id} > CLUSTER_ID
-          echo "::set-env name=CLUSTER_NAME::${CLUSTER_PREFIX}${cluster_id}"
           echo "::set-output name=previous_runs_artifacts_url::${previous_runs_artifacts_url//$'\n'/'%0A'}"
-          echo "::warning::Redeploying cluster ${CLUSTER_PREFIX}${cluster_id}"
+
+      - name: Set cluster ID and prefix
+        id: set_cluster_id
+        run: |
+          cluster_id_file="CLUSTER_ID"
+          if [ -f "${cluster_id_file}" ]; then
+            active_cluster_id=$(cat ${cluster_id_file})
+            echo "::set-output name=active_cluster_id::${active_cluster_id}"
+          fi
+          if [[ -z "${active_cluster_id}" || ${active_cluster_id} = ${NUMBER_OF_CLUSTERS} ]]; then
+            cluster_id=1
+          else
+            cluster_id=$(($active_cluster_id + 1))
+          fi
+          git_repository="${GITHUB_REPOSITORY#*/}"
+          git_repository_owner="${GITHUB_REPOSITORY%/*}"
+          cluster_prefix="${git_repository}-ci"
+          if [[ "${git_repository_owner}" != "suse" ]]; then
+            cluster_prefix="${git_repository_owner}"
+          fi
+          echo "::set-output name=cluster_id::${cluster_id}"
+          echo "::set-env name=CLUSTER_NAME::${cluster_prefix}${cluster_id}"
+          echo "::set-env name=ARTIFACT_DIR::catapult/build${cluster_prefix}${cluster_id}"
+
       - name: Drop OPENRC
         env:
           sec_openrc: ${{ secrets.OPENRC }}
         run: echo "$sec_openrc" | base64 -d > ./.openrc
-      - name: '[CLEAN UP] Get catapult arficats from previuos run'
-        if: steps.get_cluster.outputs.previous_runs_artifacts_url
+
+      - name: Get deployment artifacts from previous run
+        if: steps.fetch_artifacts.outputs.previous_runs_artifacts_url
         id: artifact_download
         run: |
           artifact_name=deployment-${CLUSTER_NAME}
-          for artifact_url in "${{ steps.get_cluster.outputs.previous_runs_artifacts_url }}" ; do
-            artifact_download_url=$(curl -sH "${GH_API_HEADER}" ${artifact_url} \
+          previous_runs_artifacts_url="${{ steps.fetch_artifacts.outputs.previous_runs_artifacts_url }}"
+          for artifact_url in ${previous_runs_artifacts_url} ; do
+            artifact_download_url=$(curl -sH "${GH_API_HEADER}" "${artifact_url}" \
               | jq -rc ".artifacts[] | select(.name==\"${artifact_name}\") | .archive_download_url")
             if [[ ! -z "${artifact_download_url}" ]]; then
-              curl -sLH "${GH_API_HEADER}" $artifact_download_url --output ${artifact_name}.zip
-              rm -rf ${artifact_name}
-              mkdir ${artifact_name}
-              unzip ${artifact_name}.zip -d ${artifact_name}
+              wget --header="${GH_API_HEADER}" ${artifact_download_url} -O ${artifact_name}.zip
+              rm -rf ${ARTIFACT_DIR}
+              mkdir -p ${ARTIFACT_DIR}
+              unzip ${artifact_name}.zip -d ${ARTIFACT_DIR}
               echo "::set-output name=succeeded::true"
               break
             fi
           done
-      - name: '[CLEAN UP] Delete non kubernetes system namespaces'
+
+      - name: Delete non kubernetes system namespaces
         if: steps.artifact_download.outputs.succeeded
         run: |
-          if [[ -f "deployment-${CLUSTER_NAME}/kubeconfig" ]]; then
-            export KUBECONFIG=deployment-${CLUSTER_NAME}/kubeconfig
+          if [ -f "${ARTIFACT_DIR}/kubeconfig" ]; then
+            export KUBECONFIG="${ARTIFACT_DIR}/kubeconfig"
             for n in $(kubectl get ns -o=custom-columns=kube-:.metadata.name | grep -v "kube-\|default"); do
               kubectl delete ns $n
             done
           fi
-      - name: '[CLEAN UP] Delete virtual resources on ECP'
+
+      - name: Delete virtual resources on ECP
         if: steps.artifact_download.outputs.succeeded
         run: |
-          . ./.openrc
-          cd deployment-${CLUSTER_NAME}/deployment
-          terraform init
-          terraform destroy -auto-approve
+          if [ -d "${ARTIFACT_DIR}/deployment" ]; then
+            . ./.openrc
+            pushd ${ARTIFACT_DIR}/deployment
+            terraform init
+            terraform destroy -auto-approve
+            popd
+            rm -rf ${ARTIFACT_DIR}
+          fi
+
       - name: Checkout catapult repository
         uses: actions/checkout@v2
         with:
           repository: SUSE/catapult
-          path: catapult
-      - name: Deploy new CaaSP cluster
+          path: deploy_caasp/catapult
+
+      - name: Deploy CaaSP
         id: deploy_cluster
         run: |
           . ./.openrc
+          docker system prune -fa
+          rm -rf agent.sock
+          eval $(ssh-agent -a $(pwd)/agent.sock)
           cd catapult
-          eval $(ssh-agent)
           echo "::set-output name=step_reached::true"
           OWNER=${CLUSTER_NAME} BACKEND=caasp4os make k8s
           echo "::set-env name=KUBECONFIG::$(realpath build${{ env.CLUSTER_NAME }}/kubeconfig)"
-      - name: Archieve deployment artifacts
+
+      - name: Archive deployment artifacts
         if: always() && steps.deploy_cluster.outputs.step_reached
         uses: actions/upload-artifact@v2
         with:
           name: deployment-${{ env.CLUSTER_NAME }}
           path: |
-            catapult/build${{ env.CLUSTER_NAME }}/deployment
-            catapult/build${{ env.CLUSTER_NAME }}/id_rsa_shared
-            catapult/build${{ env.CLUSTER_NAME }}/kubeconfig
+            deploy_caasp/catapult/build${{ env.CLUSTER_NAME }}
+            !deploy_caasp/catapult/build${{ env.CLUSTER_NAME }}/bin
+
+      - name: Checkout registry repository
+        uses: actions/checkout@v2
+        with:
+          path: deploy_caasp/registry
+
       - name: Deploy NGINX ingress controller
         run: |
-          cat << EOF | tee nginx-ingress-config-values.yaml
-          controller:
-            service:
-              enableHttp: false
-              type: LoadBalancer
-            replicaCount: 1
-          EOF
           helm repo add suse https://kubernetes-charts.suse.com
+          helm repo update
           kubectl create ns nginx-ingress
-          helm -n nginx-ingress install nginx-ingress suse/nginx-ingress -f nginx-ingress-config-values.yaml --wait --timeout 5m
-      - name: Keep current cluster as active if this deployment fails
-        if: env.ACTIVE_CLUSTER_ID && (failure() || (cancelled() && steps.deploy_cluster.outputs.step_reached))
-        run: echo ${ACTIVE_CLUSTER_ID} > CLUSTER_ID
-      - name: Save active cluster ID
+          helm -n nginx-ingress install nginx-ingress suse/nginx-ingress \
+            -f registry/.github/cluster-services/nginx-ingress-values.yaml \
+            --wait --timeout 5m
+
+      - name: Deploy logging stack
+        run: |
+          ingress_host="logs.$(kubectl get svc nginx-ingress-controller -n nginx-ingress \
+            -o json | jq -r ".status.loadBalancer.ingress[].ip").nip.io"
+          cd registry/.github/cluster-services/logging
+          kubectl create ns logging-stack
+          helm -n logging-stack install logging-stack . \
+            --set "kibana.ingress.hosts={${ingress_host}}" \
+            --set "kibana.ingress.tls[0].hosts={${ingress_host}}" \
+            --dependency-update --wait --timeout 10m
+          curl -km 60 -X POST "https://${ingress_host}/api/saved_objects/_import?overwrite=true" \
+            -H "kbn-xsrf: true" --form file=@kibana-config.ndjson
+
+      - name: Save new CLUSTER_ID
+        run: echo "${{ steps.set_cluster_id.outputs.cluster_id }}" > CLUSTER_ID
+
+      - name: Archive cluster ID
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: cluster-id
-          path: CLUSTER_ID
+          path: deploy_caasp/CLUSTER_ID

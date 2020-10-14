@@ -1,0 +1,18 @@
+apiVersion: v1
+description: CI logging chart
+name: logging
+version: 0.0.1
+appVersion: 7.9.2
+
+dependencies:
+  - name: elasticsearch
+    version: ~7.9.2
+    repository: https://helm.elastic.co
+
+  - name: kibana
+    version: ~7.9.2
+    repository: https://helm.elastic.co
+
+  - name: fluent-bit
+    version: ~2.10.1
+    repository: https://kubernetes-charts.storage.googleapis.com

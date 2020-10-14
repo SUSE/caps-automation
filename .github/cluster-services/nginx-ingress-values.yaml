@@ -1,0 +1,5 @@
+controller:
+  service:
+    enableHttp: false
+    type: LoadBalancer
+  replicaCount: 1
