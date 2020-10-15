@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p ${osc_config_dir}
           echo "${sec_osc_config}" | base64 -d > ${osc_config_dir}/oscrc
-          echo "::set-env name=OSC_CONFIG::${osc_config_dir}/oscrc"
+          echo "OSC_CONFIG=${osc_config_dir}/oscrc" >> $GITHUB_ENV
 
       - name: "Watching projects..."
         run: |

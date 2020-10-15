@@ -14,11 +14,11 @@ on:
 env:
   REGISTRY_VERSION: "2.0"
   CHART_VERSION: "1.4"
+  RC_CHANNEL: "#ecosystem-ci"
   HELM_EXPERIMENTAL_OCI: 1
   HELM_CACHE_HOME: ".cache"
   HELM_CONFIG_HOME: ".config"
   HELM_DATA_HOME: ".local/share"
-  RC_CHANNEL: "#ecosystem-ci"
 
 jobs:
   test_suse_private_registry:
@@ -95,8 +95,8 @@ jobs:
           GH_API_HEADER="authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
           git_repository="${GITHUB_REPOSITORY#*/}"
           git_repository_owner="${GITHUB_REPOSITORY%/*}"
-          cluster_prefix="${git_repository}-ci"
-          if [[ "${git_repository_owner}" != "suse" ]]; then
+          cluster_prefix="ecosystem"
+          if [[ "${git_repository_owner}" != "SUSE" ]]; then
             cluster_prefix="${git_repository_owner}"
           fi
           active_cluster_artifacts_url=$(curl -sH "${GH_API_HEADER}" \
