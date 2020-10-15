@@ -241,7 +241,7 @@ jobs:
     container:
       image: "opensuse/leap:15.2"
       volumes:
-        - /__w/registry
+        - /__w/caps-automation
     env:
       CHART_PATH: ./harbor
     steps:

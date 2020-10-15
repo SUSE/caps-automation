@@ -56,8 +56,8 @@ jobs:
           fi
           git_repository="${GITHUB_REPOSITORY#*/}"
           git_repository_owner="${GITHUB_REPOSITORY%/*}"
-          cluster_prefix="${git_repository}-ci"
-          if [[ "${git_repository_owner}" != "suse" ]]; then
+          cluster_prefix="ecosystem"
+          if [[ "${git_repository_owner}" != "SUSE" ]]; then
             cluster_prefix="${git_repository_owner}"
           fi
           echo "::set-output name=cluster_id::${cluster_id}"
@@ -137,10 +137,10 @@ jobs:
             deploy_caasp/catapult/build${{ env.CLUSTER_NAME }}
             !deploy_caasp/catapult/build${{ env.CLUSTER_NAME }}/bin
 
-      - name: Checkout registry repository
+      - name: Checkout caps-automation repository
         uses: actions/checkout@v2
         with:
-          path: deploy_caasp/registry
+          path: deploy_caasp/caps-automation
 
       - name: Deploy NGINX ingress controller
         run: |
@@ -148,14 +148,14 @@ jobs:
           helm repo update
           kubectl create ns nginx-ingress
           helm -n nginx-ingress install nginx-ingress suse/nginx-ingress \
-            -f registry/.github/cluster-services/nginx-ingress-values.yaml \
+            -f caps-automation/.github/cluster-services/nginx-ingress-values.yaml \
             --wait --timeout 5m
 
       - name: Deploy logging stack
         run: |
           ingress_host="logs.$(kubectl get svc nginx-ingress-controller -n nginx-ingress \
             -o json | jq -r ".status.loadBalancer.ingress[].ip").nip.io"
-          cd registry/.github/cluster-services/logging
+          cd caps-automation/.github/cluster-services/logging
           kubectl create ns logging-stack
           helm -n logging-stack install logging-stack . \
             --set "kibana.ingress.hosts={${ingress_host}}" \
