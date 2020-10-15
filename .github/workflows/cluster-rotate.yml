@@ -61,8 +61,8 @@ jobs:
             cluster_prefix="${git_repository_owner}"
           fi
           echo "::set-output name=cluster_id::${cluster_id}"
-          echo "::set-env name=CLUSTER_NAME::${cluster_prefix}${cluster_id}"
-          echo "::set-env name=ARTIFACT_DIR::catapult/build${cluster_prefix}${cluster_id}"
+          echo "CLUSTER_NAME=${cluster_prefix}${cluster_id}" >> $GITHUB_ENV
+          echo "ARTIFACT_DIR=catapult/build${cluster_prefix}${cluster_id}" >> $GITHUB_ENV
 
       - name: Drop OPENRC
         env:
@@ -126,7 +126,7 @@ jobs:
           cd catapult
           echo "::set-output name=step_reached::true"
           OWNER=${CLUSTER_NAME} BACKEND=caasp4os make k8s
-          echo "::set-env name=KUBECONFIG::$(realpath build${{ env.CLUSTER_NAME }}/kubeconfig)"
+          echo "KUBECONFIG=$(realpath build${{ env.CLUSTER_NAME }}/kubeconfig)" >> $GITHUB_ENV
 
       - name: Archive deployment artifacts
         if: always() && steps.deploy_cluster.outputs.step_reached
