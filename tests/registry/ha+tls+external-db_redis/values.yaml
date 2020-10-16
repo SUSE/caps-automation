@@ -25,7 +25,12 @@ persistence:
       storageClass: ${k8s_storageclass}
       accessMode: ReadWriteMany
   imageChartStorage:
-    type: ${type}
+    type: ${storage_type}
+    s3:
+      region: eu-central-1
+      bucket: ${object_storage_bucket}
+      accesskey: ${object_storage_access_key}
+      secretkey: ${object_storage_secret_key}
     azure:
       accountname: ${object_storage_account_name}
       accountkey: "${object_storage_access_key}"

@@ -1,0 +1,173 @@
+name: "[WIP|PC|Weekly]SUSE Private Registry:2.1"
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - eks
+
+env:
+  SPR_VERSION: "2.1"
+  CHART_SRC: "registry.suse.com/harbor/harbor:1.5"
+
+jobs:
+  public_cloud_registry:
+    name: Integration Tests
+    runs-on: ecosystem-ci-runners
+    container:
+      image: "opensuse/leap:15.2"
+      # ensures a dedicated empty workspace
+      volumes:
+        - /__w/caps-automation
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_distribution: [eks]
+        test_scenario: ["ha+tls+external-db_redis"]
+        include:
+          - k8s_distribution: eks
+            k8s_storageclass: fixme
+    timeout-minutes: 90
+    steps:
+      - name: Setup environment
+        id: set_env
+        run: |
+          echo "NAMESPACE=spr${SPR_VERSION/./}-release-${{ github.run_number }}" >> $GITHUB_ENV
+          echo "::set-output name=chart_install_src::${CHART_SRC}"
+
+      - name: Install requirements
+        run: |
+          zypper -n ar -f http://download.suse.de/ibs/SUSE:/CA/openSUSE_Leap_15.2/SUSE:CA.repo
+          zypper -n ar -Gf http://download.suse.de/ibs/SUSE:/SLE-15-SP2:/Update:/Products:/CAPS-Registry:/${SPR_VERSION}/standard/SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:${SPR_VERSION}.repo
+          zypper -n in ca-certificates-suse gettext gzip helm jq kubernetes-client \
+            python3-robotframework tar unzip wget git-core
+          wget -q https://releases.hashicorp.com/terraform/0.13.4/terraform_0.13.4_linux_amd64.zip \
+            -O terraform.zip
+          unzip terraform.zip -d /usr/local/bin
+          wget -q https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.8/2020-09-18/bin/linux/amd64/aws-iam-authenticator \
+            -O /usr/local/bin/aws-iam-authenticator
+          chmod +x /usr/local/bin/aws-iam-authenticator
+
+      - uses: actions/checkout@v2
+
+      - name: Setup ${{ matrix.k8s_distribution }} for ${{ matrix.test_scenario }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          terraform init
+          terraform workspace new ${NAMESPACE}
+          terraform apply -var-file ../../../tests/registry/${{ matrix.test_scenario }}/infra.tfvars \
+            -auto-approve
+          echo "KUBECONFIG=$(realpath ./kubeconfig_${NAMESPACE}-eks)" >> $GITHUB_ENV
+        working-directory: infra/terraform/${{ matrix.k8s_distribution }}
+
+      - name: Prepare values file
+        shell: bash
+        run: |
+          # Load values from the terraform output
+          tf_output=$(cd infra/terraform/${{ matrix.k8s_distribution }}; terraform output -json)
+          while read key; do
+            value=$(echo $tf_output | jq -r ".$key.value")
+            is_sensitive=$(echo $tf_output | jq -r ".$key.sensitive")
+            if [[ "$value" != "" ]]; then
+              export $key=$value
+              if [[ "$is_sensitive" == "true" ]]; then
+                echo "::add-mask::$value"
+              fi
+            fi
+          done < <(echo $tf_output | jq -r '.|keys[]')
+          export INGRESS_IP=$(kubectl get svc -n ingress-basic | awk '/LoadBalancer/ { print $4 }')
+          export k8s_storageclass=${{ matrix.k8s_storageclass }}
+          export github_token="${{ secrets.GITHUB_TOKEN }}"
+          envsubst < tests/registry/${{ matrix.test_scenario }}/values.yaml > ci-values.yaml
+          cat ci-values.yaml
+
+      - name: SUSE Private Registry (install)
+        env:
+          HELM_EXPERIMENTAL_OCI: 1
+          HELM_CACHE_HOME: ".cache"
+          HELM_CONFIG_HOME: ".config"
+          HELM_DATA_HOME: ".local/share"
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          helm chart pull ${{ steps.set_env.outputs.chart_install_src }}
+          helm chart export ${{ steps.set_env.outputs.chart_install_src }}
+          chart="./harbor"
+          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ci-values.yaml --create-namespace \
+            --timeout 10m --wait
+
+      - name: Run tests
+        id: run_tests
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          set +e
+          release_name=${NAMESPACE}
+          namespace=${NAMESPACE}
+          mkdir test_report
+          helm test -n $namespace $release_name --timeout 30m &
+          helm_test_pid=$!
+          test_pods=$(helm status -n $namespace $release_name -o json | jq -r .hooks[].name)
+          until kubectl exec -n $namespace $test_pods "--" pgrep "pybot|robot" &> /dev/null; do
+            sleep 1
+          done
+          while kubectl exec -n $namespace $test_pods "--" pgrep "pybot|robot" &> /dev/null; do
+            sleep 1
+          done
+          kubectl cp -n $namespace $test_pods:/var/lib/harbor-test/output.xml test_report/output.xml
+          wait $helm_test_pid
+          status=$?
+          rebot -d test_report --log api_log.html --report api_report.html --xunit api_xunit.xml \
+            test_report/output.xml
+          kubectl -n $namespace logs $test_pods -c api-tests
+          echo "::set-output name=has_artifacts::true"
+          exit $status
+
+      - name: Collect logs from pods
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+        if: always()
+        run: |
+          mkdir pods_logs && cd pods_logs
+          for pod in $(kubectl get pods -n ${NAMESPACE} -o json | jq -r ".items[].metadata.name"); do
+            mkdir $pod && pushd $pod
+            kubectl -n ${NAMESPACE} get pod $pod -o json | jq ".status.containerStatuses[]" > status.info
+            for container in $(kubectl -n ${NAMESPACE} get pod $pod -o json | jq -r ".status.containerStatuses[].name"); do
+              kubectl -n ${NAMESPACE} logs $pod -c $container > $container.log
+            done
+            popd
+          done
+
+      - name: Destroy environment
+        if: always()
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          kubectl delete ns ${NAMESPACE} || true
+          terraform destroy -auto-approve
+          terraform workspace select default && terraform workspace delete ${NAMESPACE}
+        working-directory: infra/terraform/${{ matrix.k8s_distribution }}
+
+      - name: Archive logs from pods
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: logs_${{ matrix.k8s_distribution }}-${{ matrix.test_scenario }}
+          path: pods_logs/*
+
+      - name: Archive test results
+        if: always() && steps.run_tests.outputs.has_artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: test_report_${{ matrix.k8s_distribution }}-${{ matrix.test_scenario }}
+          path: test_report/*
+
+      - name: Process test results
+        if: always() && steps.run_tests.outputs.has_artifacts
+        uses: flaviodsr/junit-report-annotations-action@master
+        with:
+          path: test_report/api_xunit.xml

@@ -16,20 +16,20 @@ output "db_password" {
   sensitive = true
 }
 
-output "object_storage_account_name" {
-  value     = join("", module.blob_storage.*.account_name)
-  sensitive = true
-}
-
-output "object_storage_access_key" {
-  value     = join("", module.blob_storage.*.access_key)
-  sensitive = true
-}
-
-output "object_storage_container_name" {
+output "object_storage_bucket" {
   value     = join("", module.blob_storage.*.container_name)
   sensitive = true
 }
+
+#output "object_storage_access_key" {
+#  value     = join("", module.blob_storage.*.access_key)
+#  sensitive = true
+#}
+
+#output "object_storage_container_name" {
+#  value     = join("", module.blob_storage.*.container_name)
+#  sensitive = true
+#}
 
 output "redis_fqdn" {
   value     = join("", module.redis_cache.*.hostname)
@@ -42,5 +42,5 @@ output "redis_password" {
 }
 
 output "storage_type" {
-  value = "azure"
+  value = "s3"
 }
