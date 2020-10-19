@@ -130,6 +130,7 @@ jobs:
                 core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
                 notary: "notary.${NAMESPACE}.${INGRESS_IP}.nip.io"
           externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
+          harborAdminPassword: "Harbor12345"
           core:
             # Set the GC time window to 0 for the GC tests to pass
             gcTimeWindowHours: 0
