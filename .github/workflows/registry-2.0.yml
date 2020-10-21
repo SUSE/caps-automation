@@ -167,7 +167,7 @@ jobs:
           release_name=${NAMESPACE}
           namespace=${NAMESPACE}
           mkdir test_report
-          helm test -n $namespace $release_name --timeout 30m &
+          helm test -n $namespace $release_name --timeout 45m &
           helm_test_pid=$!
           test_pods=$(helm status -n $namespace $release_name -o json | jq -r .hooks[].name)
           until kubectl exec -n $namespace $test_pods "--" pgrep "pybot|robot" &> /dev/null; do
