@@ -10,6 +10,7 @@ jobs:
     runs-on: ecosystem-ci-runners
     env:
       NUMBER_OF_CLUSTERS: 2
+      WORKERS: 6
       GH_API_HEADER: "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
     defaults:
       run:
@@ -124,6 +125,8 @@ jobs:
           rm -rf agent.sock
           eval $(ssh-agent -a $(pwd)/agent.sock)
           cd catapult
+          sed -i "s/^workers =.*/workers = ${WORKERS}/" \
+            backend/caasp4os/terraform-os/terraform.tfvars.skel
           echo "::set-output name=step_reached::true"
           OWNER=${CLUSTER_NAME} BACKEND=caasp4os make k8s
           echo "KUBECONFIG=$(realpath build${{ env.CLUSTER_NAME }}/kubeconfig)" >> $GITHUB_ENV
