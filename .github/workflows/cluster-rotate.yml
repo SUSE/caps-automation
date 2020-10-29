@@ -11,6 +11,10 @@ jobs:
     env:
       NUMBER_OF_CLUSTERS: 2
       WORKERS: 6
+      CLUSTER_SERVICES: >-
+        ingress-nginx-suse
+        cert-manager
+        logging
       GH_API_HEADER: "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
     defaults:
       run:
@@ -145,27 +149,33 @@ jobs:
         with:
           path: deploy_caasp/caps-automation
 
-      - name: Deploy NGINX ingress controller
+      - name: Install extra services on cluster
         run: |
-          helm repo add suse https://kubernetes-charts.suse.com
-          helm repo update
-          kubectl create ns nginx-ingress
-          helm -n nginx-ingress install nginx-ingress suse/nginx-ingress \
-            -f caps-automation/.github/cluster-services/nginx-ingress-values.yaml \
-            --wait --timeout 5m
-
-      - name: Deploy logging stack
-        run: |
-          ingress_host="logs.$(kubectl get svc nginx-ingress-controller -n nginx-ingress \
-            -o json | jq -r ".status.loadBalancer.ingress[].ip").nip.io"
-          cd caps-automation/.github/cluster-services/logging
-          kubectl create ns logging-stack
-          helm -n logging-stack install logging-stack . \
-            --set "kibana.ingress.hosts={${ingress_host}}" \
-            --set "kibana.ingress.tls[0].hosts={${ingress_host}}" \
-            --dependency-update --wait --timeout 10m
-          curl -km 60 -X POST "https://${ingress_host}/api/saved_objects/_import?overwrite=true" \
-            -H "kbn-xsrf: true" --form file=@kibana-config.ndjson
+          cd caps-automation/infra/k8s_extra_services
+          for service in ${{ env.CLUSTER_SERVICES }}; do
+            case "${service}" in
+              logging)
+                ingress_host="logs.${INGRESS_IP}.nip.io"
+                flags="--set kibana.ingress.hosts={${ingress_host}} --set kibana.ingress.tls[0].hosts={${ingress_host}}"
+                ;;
+              cert-manager)
+                flags="--set cluster_issuer=selfsigned"
+                ;;
+              *)
+                flags=""
+            esac
+            helm install ${service} ./${service} --create-namespace -n ${service} \
+              --dependency-update ${flags} --wait --timeout 10m
+            case "${service}" in
+              ingress-nginx*)
+                export INGRESS_IP="$(kubectl get svc -n ${service} | awk '/LoadBalancer/ { print $4 }')"
+                ;;
+              logging)
+                curl -km 60 -X POST "https://${ingress_host}/api/saved_objects/_import?overwrite=true" \
+                  -H "kbn-xsrf: true" --form file=@./${service}/kibana-config.ndjson
+                ;;
+            esac
+          done
 
       - name: Save new CLUSTER_ID
         run: echo "${{ steps.set_cluster_id.outputs.cluster_id }}" > CLUSTER_ID
