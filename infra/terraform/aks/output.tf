@@ -1,11 +1,6 @@
 # The join is required to get a "scalar" value as the module output returns
 # a list because of the way they can be dynamically enabled/disabled. See:
 # https://github.com/hashicorp/terraform/issues/11566#issuecomment-289417805
-output "kubeconfig" {
-  value     = join("", module.aks.*.kubeconfig)
-  sensitive = true
-}
-
 output "db_fqdn" {
   value     = join("", module.postgresql.*.fqdn)
   sensitive = true

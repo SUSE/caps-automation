@@ -4,7 +4,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "rg" {
-  name     = "${terraform.workspace}-${var.resource_group_name}"
+  name     = "${var.resource_group_name}-${terraform.workspace}"
   location = var.location
 }
 
@@ -32,7 +32,7 @@ module "blob_storage" {
   source = "./modules/blob_storage"
   count  = var.object_storage_enabled ? 1 : 0
 
-  account_name        = "${terraform.workspace}accountecosystemci"
+  account_name_prefix = substr(terraform.workspace, 0, 4)
   container_name      = "${terraform.workspace}-container"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name

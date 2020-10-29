@@ -28,18 +28,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
 resource "local_file" "kubeconfig-and-ingress" {
   content         = azurerm_kubernetes_cluster.aks.kube_config_raw
-  filename        = "./azurek8s"
+  filename        = "./kubeconfig"
   file_permission = "0600"
-
-  provisioner "local-exec" {
-    command = <<EOT
-      helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-      helm install nginx-ingress ingress-nginx/ingress-nginx --create-namespace \
-        -n ingress-basic --set controller.replicaCount=2
-    EOT
-
-    environment = {
-      KUBECONFIG = "./azurek8s"
-    }
-  }
 }

@@ -1,0 +1,9 @@
+apiVersion: v1
+description: CI cert-manager chart
+name: ci-cert-manager
+version: 0.0.1
+
+dependencies:
+  - name: cert-manager
+    version: 0.16.1
+    repository: https://charts.jetstack.io
