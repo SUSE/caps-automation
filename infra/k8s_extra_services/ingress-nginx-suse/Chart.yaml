@@ -1,0 +1,9 @@
+apiVersion: v1
+description: CI ingress-nginx-suse chart
+name: ci-ingress-nginx-suse
+version: 0.0.1
+
+dependencies:
+  - name: nginx-ingress
+    version: ">=1.41.2"
+    repository: https://kubernetes-charts.suse.com

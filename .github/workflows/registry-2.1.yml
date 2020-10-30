@@ -120,17 +120,24 @@ jobs:
 
       - name: Generate helm values
         run: |
-          INGRESS_IP=$(kubectl get svc nginx-ingress-controller -n nginx-ingress \
-            -o json | jq -r ".status.loadBalancer.ingress[].ip")
+          INGRESS_IP="$(kubectl get svc --all-namespaces -l app=nginx-ingress | awk '/LoadBalancer/ { print $5 }')"
           echo "INGRESS_IP=${INGRESS_IP}" >> $GITHUB_ENV
           cat << EOF | tee ${NAMESPACE}.yaml
           expose:
+            tls:
+              certSource: secret
+              secret:
+                secretName: core-tls
+                notarySecretName: notary-tls
             ingress:
               hosts:
                 core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
                 notary: "notary.${NAMESPACE}.${INGRESS_IP}.nip.io"
+              annotations:
+                cert-manager.io/cluster-issuer: selfsigned
           externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
           harborAdminPassword: "Harbor12345"
+          caSecretName: "core-tls"
           core:
             # Set the GC time window to 0 for the GC tests to pass
             gcTimeWindowHours: 0
@@ -139,7 +146,7 @@ jobs:
           updateStrategy:
             type: Recreate
           internalTLS:
-            enabled: false
+            enabled: true
           imagePullPolicy: Always
           EOF
 

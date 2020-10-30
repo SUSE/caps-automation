@@ -1,10 +1,12 @@
+{{- if .Values.cluster_issuer -}}
 apiVersion: cert-manager.io/v1alpha2
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt
+  name: {{ .Values.cluster_issuer }}
   annotations:
     "helm.sh/hook": post-install
 spec:
+{{- if eq .Values.cluster_issuer "letsencrypt" }}
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
     email: ""
@@ -18,3 +20,9 @@ spec:
             spec:
               nodeSelector:
                 "kubernetes.io/os": linux
+{{- else }}
+  ca:
+    secretName: self-signed-ca
+  # selfSigned: {}
+{{- end }}
+{{- end -}}

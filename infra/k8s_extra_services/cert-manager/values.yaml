@@ -1,2 +1,3 @@
+cluster_issuer: "letsencrypt"
 cert-manager:
     installCRDs: true
