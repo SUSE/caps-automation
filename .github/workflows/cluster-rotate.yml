@@ -165,7 +165,7 @@ jobs:
                 flags=""
             esac
             helm install ${service} ./${service} --create-namespace -n ${service} \
-              --dependency-update ${flags} --wait --timeout 10m
+              --dependency-update ${flags} --wait --timeout 15m
             case "${service}" in
               ingress-nginx*)
                 export INGRESS_IP="$(kubectl get svc -n ${service} | awk '/LoadBalancer/ { print $4 }')"
