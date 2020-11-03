@@ -98,9 +98,12 @@ jobs:
         run: |
           if [ -f "${ARTIFACT_DIR}/kubeconfig" ]; then
             export KUBECONFIG="${ARTIFACT_DIR}/kubeconfig"
-            for n in $(kubectl get ns -o=custom-columns=kube-:.metadata.name | grep -v "kube-\|default"); do
-              kubectl delete ns $n
-            done
+            kubectl get ns --no-headers -o=custom-columns=:.metadata.name | grep -v \
+              "kube-\|default\|$(echo ${CLUSTER_SERVICES} | sed -r 's/ /\\|/g')" \
+              | xargs --no-run-if-empty kubectl delete ns
+            if [[ "${CLUSTER_SERVICES}" != "" ]]; then
+              kubectl delete ns ${CLUSTER_SERVICES} || true
+            fi
           fi
 
       - name: Delete virtual resources on ECP
