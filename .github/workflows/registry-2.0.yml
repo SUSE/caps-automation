@@ -120,8 +120,7 @@ jobs:
 
       - name: Generate helm values
         run: |
-          INGRESS_IP=$(kubectl get svc nginx-ingress-controller -n nginx-ingress \
-          -o json | jq -r ".status.loadBalancer.ingress[].ip")
+          INGRESS_IP="$(kubectl get svc --all-namespaces -l app=nginx-ingress | awk '/LoadBalancer/ { print $5 }')"
           echo "INGRESS_IP=${INGRESS_IP}" >> $GITHUB_ENV
           cat << EOF | tee ${NAMESPACE}.yaml
           suse:
