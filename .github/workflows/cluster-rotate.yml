@@ -180,8 +180,10 @@ jobs:
             esac
           done
 
-      - name: Save new CLUSTER_ID
-        run: echo "${{ steps.set_cluster_id.outputs.cluster_id }}" > CLUSTER_ID
+      - name: Save new CLUSTER_ID and set node kubeconfig
+        run: |
+          echo "${{ steps.set_cluster_id.outputs.cluster_id }}" > CLUSTER_ID
+          cp ${KUBECONFIG} ~/.kube/config
 
       - name: Archive cluster ID
         if: always()
