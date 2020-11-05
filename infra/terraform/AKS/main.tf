@@ -1,6 +1,18 @@
+terraform {
+  required_version = ">= 0.13.0"
+}
+
 provider "azurerm" {
   version = "~>2.0"
   features {}
+}
+
+provider "random" {
+  version = "~> 3.0.0"
+}
+
+provider "local" {
+  version = "~> 2.0.0"
 }
 
 resource "azurerm_resource_group" "rg" {

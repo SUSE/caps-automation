@@ -1,4 +1,4 @@
-name: "[Pub. Cloud] SUSE Private Registry:2.1"
+name: "[PC] SUSE Private Registry:2.1"
 on:
   workflow_dispatch:
 
@@ -11,18 +11,22 @@ jobs:
     name: Integration Tests
     runs-on: ecosystem-ci-runners
     container:
-      image: "opensuse/leap:15.2"
+      image: "registry.opensuse.org/opensuse/leap:15.2"
       # ensures a dedicated empty workspace
       volumes:
         - /__w/caps-automation
     strategy:
       fail-fast: false
       matrix:
-        k8s_distribution: [aks]
-        test_scenario: ["ha+tls+external-db_redis"]
+        k8s_distribution: [AKS, EKS]
         include:
-          - k8s_distribution: aks
-            k8s_storageclass: azurefile
+          - k8s_distribution: AKS
+            test_scenario: "ha+tls+external-db_redis"
+            k8s_extra_services: >-
+              ingress-nginx-upstream
+              cert-manager
+          - k8s_distribution: EKS
+            test_scenario: "ha+tls+external-db_redis"
             k8s_extra_services: >-
               ingress-nginx-upstream
               cert-manager
@@ -31,32 +35,42 @@ jobs:
       - name: Setup environment
         id: set_env
         run: |
-          echo "NAMESPACE=spr${SPR_VERSION/./}-release-${{ github.run_number }}" >> $GITHUB_ENV
-          echo "::set-output name=chart_install_src::${CHART_SRC}"
-
-      - name: Install requirements
-        run: |
           zypper -n ar -f http://download.suse.de/ibs/SUSE:/CA/openSUSE_Leap_15.2/SUSE:CA.repo
           zypper -n ar -Gf http://download.suse.de/ibs/SUSE:/SLE-15-SP2:/Update:/Products:/CAPS-Registry:/${SPR_VERSION}/standard/SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:${SPR_VERSION}.repo
-          zypper -n in ca-certificates-suse gettext gzip helm jq kubernetes-client \
+          zypper -n in ca-certificates-suse curl gettext gzip helm jq kubernetes-client \
             python3-robotframework tar unzip wget
           wget -q https://releases.hashicorp.com/terraform/0.13.4/terraform_0.13.4_linux_amd64.zip \
             -O terraform.zip
           unzip terraform.zip -d /usr/local/bin
+          case "${{ matrix.k8s_distribution }}" in
+            AKS)
+              echo "ARM_CLIENT_ID=${{ secrets.TF_AZ_ARM_CLIENT_ID }}" >> $GITHUB_ENV
+              echo "ARM_CLIENT_SECRET=${{ secrets.TF_AZ_ARM_CLIENT_SECRET }}" >> $GITHUB_ENV
+              echo "ARM_SUBSCRIPTION_ID=${{ secrets.TF_AZ_ARM_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+              echo "ARM_TENANT_ID=${{ secrets.TF_AZ_ARM_TENANT_ID }}" >> $GITHUB_ENV
+              echo "ARM_ACCESS_KEY=${{ secrets.TF_AZ_ARM_ACCESS_KEY }}" >> $GITHUB_ENV
+              ;;
+            EKS)
+              zypper -n in git-core postgresql
+              wget -q https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.8/2020-09-18/bin/linux/amd64/aws-iam-authenticator \
+                -O /usr/local/bin/aws-iam-authenticator
+              chmod +x /usr/local/bin/aws-iam-authenticator
+              echo "AWS_ACCESS_KEY_ID=${{ secrets.TF_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+              echo "AWS_SECRET_ACCESS_KEY=${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+              ;;
+          esac
+          echo "NAMESPACE=spr${SPR_VERSION/./}-release-${{ github.run_number }}" >> $GITHUB_ENV
+          echo "::set-output name=chart_install_src::${CHART_SRC}"
 
       - uses: actions/checkout@v2
 
       - name: Setup ${{ matrix.k8s_distribution }} for ${{ matrix.test_scenario }}
-        env:
-          ARM_CLIENT_ID: ${{ secrets.TF_AZ_ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.TF_AZ_ARM_CLIENT_SECRET }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.TF_AZ_ARM_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.TF_AZ_ARM_TENANT_ID }}
         run: |
-          terraform init -backend-config="access_key=${{ secrets.TF_AZ_BACKEND_ACCESS_KEY }}"
+          terraform init
           terraform workspace new ${NAMESPACE}
           terraform apply -var-file ../../../tests/registry/${{ matrix.test_scenario }}/infra.tfvars \
             -auto-approve
+          chmod 0600 ./kubeconfig
           echo "KUBECONFIG=$(realpath ./kubeconfig)" >> $GITHUB_ENV
         working-directory: infra/terraform/${{ matrix.k8s_distribution }}
 
@@ -64,11 +78,22 @@ jobs:
         if: matrix.k8s_extra_services
         run: |
           for service in ${{ matrix.k8s_extra_services }}; do
-            helm install ${service} ./${service} --create-namespace -n ${service} \
-              --dependency-update --wait
+            helm dependency update ./${service}
+            # retry 3 times
+            for i in $(seq 1 4); do
+              [ $i -gt 1 ] && sleep 3 && echo "retrying..."
+              helm upgrade -i ${service} ./${service} --create-namespace -n ${service} \
+                --wait --timeout 10m && s=0 && break || s=$?
+            done
+            [ ${s} -ne 0 ] && exit ${s}
             if [[ "${service}" == "ingress-nginx-upstream" ]]; then
-              echo "INGRESS_IP=$(kubectl get svc -n ingress-nginx-upstream | awk '/LoadBalancer/ { print $4 }')" \
-                >> $GITHUB_ENV
+              INGRESS_IP=$(kubectl get svc -n ${service} | awk '/LoadBalancer/ { print $4 }')
+              while [[ ! $INGRESS_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; do
+                sleep 5
+                INGRESS_IP=$(kubectl get svc -n ${service} | awk '/LoadBalancer/ { print $4 }' \
+                  | xargs getent hosts | awk 'END { print $1 }')
+              done
+              echo "INGRESS_IP=${INGRESS_IP}" >> $GITHUB_ENV
             fi
           done
         working-directory: infra/k8s_extra_services
@@ -88,7 +113,6 @@ jobs:
               fi
             fi
           done < <(echo $tf_output | jq -r '.|keys[]')
-          export k8s_storageclass=${{ matrix.k8s_storageclass }}
           export github_token="${{ secrets.GITHUB_TOKEN }}"
           envsubst < tests/registry/${{ matrix.test_scenario }}/values.yaml > ci-values.yaml
           cat ci-values.yaml
@@ -103,8 +127,25 @@ jobs:
           helm chart pull ${{ steps.set_env.outputs.chart_install_src }}
           helm chart export ${{ steps.set_env.outputs.chart_install_src }}
           chart="./harbor"
-          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ci-values.yaml --create-namespace \
-            --timeout 10m --wait
+          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ci-values.yaml \
+            --create-namespace --timeout 10m --wait
+
+      - name: Gather environment information
+        run: |
+          echo "Kubernetes:"
+          kubectl version
+          kubectl get nodes -o wide
+          echo
+          echo "Helm Releases:"
+          helm list --all-namespaces
+          for service in ${{ matrix.k8s_extra_services }}; do
+            echo "- ${service}:"
+            helm show chart ./${service}/charts/*.tgz | grep "version\|appVersion\|^name"
+          done
+          echo
+          echo "Harbor:"
+          curl -sk "https://${NAMESPACE}.${INGRESS_IP}.nip.io/api/v2.0/systeminfo" | jq
+        working-directory: infra/k8s_extra_services
 
       - name: Run tests
         id: run_tests
@@ -146,17 +187,16 @@ jobs:
 
       - name: Destroy environment
         if: always()
-        env:
-          ARM_CLIENT_ID: ${{ secrets.TF_AZ_ARM_CLIENT_ID }}
-          ARM_CLIENT_SECRET: ${{ secrets.TF_AZ_ARM_CLIENT_SECRET }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.TF_AZ_ARM_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.TF_AZ_ARM_TENANT_ID }}
         run: |
           kubectl delete ns ${NAMESPACE} || true
           if [[ "${{ matrix.k8s_extra_services }}" != "" ]]; then
             kubectl delete ns ${{ matrix.k8s_extra_services }} || true
           fi
-          terraform destroy -auto-approve
+          for i in $(seq 1 4); do
+            [ $i -gt 1 ] && sleep 3 && echo "retrying..."
+            terraform destroy -auto-approve && s=0 && break || s=$?
+          done
+          [ ${s} -ne 0 ] && exit ${s}
           terraform workspace select default && terraform workspace delete ${NAMESPACE}
         working-directory: infra/terraform/${{ matrix.k8s_distribution }}
 

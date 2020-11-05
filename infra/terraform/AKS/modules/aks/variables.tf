@@ -13,7 +13,7 @@ variable "name" {
 
 variable "kubernetes_version" {
   description = "Version of Kubernetes"
-  default     = "1.19.0"
+  default     = "1.19.3"
 }
 
 variable "dns_prefix" {
