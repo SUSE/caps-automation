@@ -4,42 +4,34 @@ resource "aws_default_vpc" "default" {
   }
 }
 
-resource "aws_default_subnet" "default_a" {
-  availability_zone = "${var.region}a"
+data "aws_availability_zones" "azs" {
+  state = "available"
 }
 
-resource "aws_default_subnet" "default_b" {
-  availability_zone = "${var.region}b"
+locals {
+  az_names = data.aws_availability_zones.azs.names
 }
 
-resource "aws_default_subnet" "default_c" {
-  availability_zone = "${var.region}c"
-}
+resource "aws_default_subnet" "default_subnets" {
+  for_each = toset(local.az_names)
 
-data "aws_eks_cluster" "cluster" {
-  name = module.eks.cluster_id
-}
-
-data "aws_eks_cluster_auth" "cluster" {
-   name = module.eks.cluster_id
+  availability_zone = each.value
 }
 
 provider "kubernetes" {
-  host = data.aws_eks_cluster.cluster.endpoint
-  load_config_file = false
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
-  version = "~> 1.11"
+  config_path      = module.eks.kubeconfig_filename
+  load_config_file = true
+  version          = "~> 1.11"
 }
 
 module "eks" {
-  source          = "terraform-aws-modules/eks/aws"
-  cluster_name    = var.name
-  cluster_version = var.kubernetes_version
-  vpc_id          = aws_default_vpc.default.id
-  subnets         = [aws_default_subnet.default_a.id,
-                     aws_default_subnet.default_b.id,
-                     aws_default_subnet.default_c.id]
+  source             = "terraform-aws-modules/eks/aws"
+  cluster_name       = var.name
+  cluster_version    = var.kubernetes_version
+  write_kubeconfig   = true
+  config_output_path = "./kubeconfig"
+  vpc_id             = aws_default_vpc.default.id
+  subnets            = values(aws_default_subnet.default_subnets)[*].id
 
   tags = {
     Environment = "ecosystem - ${var.name}"
@@ -47,35 +39,46 @@ module "eks" {
 
   worker_groups = [
     {
-      name = "group-1"
-      instance_type = var.vm_size
+      name                 = "group-1"
+      instance_type        = var.vm_size
       asg_desired_capacity = var.node_count
-      spot_price = var.spot_price
-      kubelet_extra_args  = "--node-labels=node.kubernetes.io/lifecycle=spot"
+      spot_price           = var.spot_price
+      kubelet_extra_args   = "--node-labels=node.kubernetes.io/lifecycle=spot"
     }
   ]
 }
 
-resource "kubernetes_storage_class" "persistent" {
-  metadata {
-    name = "persistent"
-  }
-  storage_provisioner = "kubernetes.io/aws-ebs"
-  reclaim_policy      = "Delete"
-  allow_volume_expansion = true
-}
+# TODO: Configure EFS storageclass
+# resource "aws_efs_file_system" "efs" {
+#   creation_token = "${var.name}-storageclass"
 
-#resource "null_resource" "kubeconfig-and-ingress" {
-#  depends_on = [module.eks]
-#
-#  provisioner "local-exec" {
-#    command = <<EOT
-#    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.40.2/deploy/static/provider/aws/deploy.yaml
-#    # kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/v1.1.8/docs/examples/alb-ingress-controller.yaml
-#  EOT
-#
-#  environment = {
-#      KUBECONFIG = "./kubeconfig_${var.name}"
-#    }
-#  }
-#}
+#   tags = {
+#     Environment = "ecosystem - ${var.name}"
+#   }
+# }
+
+# resource "aws_security_group" "allow_nfs" {
+#   name        = "${terraform.workspace}-allow_nfs"
+#   description = "Allow NFS inbound traffic"
+#   vpc_id      = aws_default_vpc.default.id
+
+#   ingress {
+#     description = "NFS from VPC"
+#     from_port   = 2049
+#     to_port     = 2049
+#     protocol    = "tcp"
+#     cidr_blocks = [aws_default_vpc.default.cidr_block]
+#   }
+
+#   tags = {
+#     Name = "allow_nfs"
+#   }
+# }
+
+# resource "aws_efs_mount_target" "efs_mounts" {
+#   for_each = aws_default_subnet.default_subnets
+
+#   file_system_id = aws_efs_file_system.efs.id
+#   subnet_id = each.value.id
+#   security_groups = [aws_security_group.allow_nfs.id]
+# }

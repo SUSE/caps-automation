@@ -3,7 +3,7 @@ output "fqdn" {
 }
 
 output "login" {
-  value = "${aws_db_instance.postgresql.username}@${aws_db_instance.postgresql.endpoint}"
+  value = aws_db_instance.postgresql.username
 }
 
 output "password" {

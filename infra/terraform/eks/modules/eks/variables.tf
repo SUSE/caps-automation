@@ -9,7 +9,7 @@ variable "name" {
 
 variable "kubernetes_version" {
   description = "Version of Kubernetes"
-  default     = "1.17"
+  default     = "1.18"
 }
 
 variable "dns_prefix" {
@@ -24,8 +24,9 @@ variable "node_count" {
 
 variable "vm_size" {
   description = "Size of the Virtual Machines created by the Node Pool"
-  default     = "t3a.small"
-  #default     = "a1.medium"
+  default     = "t3a.medium"
+  # see max number of pods per node type:
+  # https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt
 }
 
 variable "spot_price" {

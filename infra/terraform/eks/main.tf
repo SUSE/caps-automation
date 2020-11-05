@@ -7,12 +7,16 @@ provider "aws" {
   region  = var.region
 }
 
+provider "http" {
+  version = "~> 2.0.0"
+}
+
 module "eks" {
   source = "./modules/eks"
 
-  name        = "${terraform.workspace}-eks"
-  dns_prefix  = terraform.workspace
-  region      = var.region
+  name       = "${terraform.workspace}-eks"
+  dns_prefix = terraform.workspace
+  region     = var.region
 }
 
 module "postgresql" {
@@ -37,6 +41,6 @@ module "redis_cache" {
   source = "./modules/redis_cache"
   count  = var.redis_enabled ? 1 : 0
 
-  name                = "${terraform.workspace}-redis"
-  region              = var.region
+  name   = "${terraform.workspace}-redis"
+  region = var.region
 }

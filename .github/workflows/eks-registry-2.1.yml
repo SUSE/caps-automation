@@ -1,9 +1,6 @@
 name: "[WIP|PC|Weekly]SUSE Private Registry:2.1"
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - eks
 
 env:
   SPR_VERSION: "2.1"
@@ -25,7 +22,10 @@ jobs:
         test_scenario: ["ha+tls+external-db_redis"]
         include:
           - k8s_distribution: eks
-            k8s_storageclass: fixme
+            k8s_storageclass: persistent
+            k8s_extra_services: >-
+              ingress-nginx-upstream
+              cert-manager
     timeout-minutes: 90
     steps:
       - name: Setup environment
@@ -38,8 +38,8 @@ jobs:
         run: |
           zypper -n ar -f http://download.suse.de/ibs/SUSE:/CA/openSUSE_Leap_15.2/SUSE:CA.repo
           zypper -n ar -Gf http://download.suse.de/ibs/SUSE:/SLE-15-SP2:/Update:/Products:/CAPS-Registry:/${SPR_VERSION}/standard/SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:${SPR_VERSION}.repo
-          zypper -n in ca-certificates-suse gettext gzip helm jq kubernetes-client \
-            python3-robotframework tar unzip wget git-core
+          zypper -n in ca-certificates-suse gettext git-core gzip helm jq kubernetes-client \
+            postgresql python3-robotframework tar unzip wget
           wget -q https://releases.hashicorp.com/terraform/0.13.4/terraform_0.13.4_linux_amd64.zip \
             -O terraform.zip
           unzip terraform.zip -d /usr/local/bin
@@ -58,10 +58,34 @@ jobs:
           terraform workspace new ${NAMESPACE}
           terraform apply -var-file ../../../tests/registry/${{ matrix.test_scenario }}/infra.tfvars \
             -auto-approve
-          echo "KUBECONFIG=$(realpath ./kubeconfig_${NAMESPACE}-eks)" >> $GITHUB_ENV
+          chmod 0600 ./kubeconfig
+          echo "KUBECONFIG=$(realpath ./kubeconfig)" >> $GITHUB_ENV
         working-directory: infra/terraform/${{ matrix.k8s_distribution }}
 
+      - name: Install extra services on ${{ matrix.k8s_distribution }}
+        if: matrix.k8s_extra_services
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          for service in ${{ matrix.k8s_extra_services }}; do
+            helm install ${service} ./${service} --create-namespace -n ${service} \
+              --dependency-update --wait
+            if [[ "${service}" == "ingress-nginx-upstream" ]]; then
+              INGRESS_IP=$(kubectl get svc -n ${service} | awk '/LoadBalancer/ { print $4 }' | xargs getent hosts | awk 'END { print $1 }')
+              while [[ ! $INGRESS_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; do
+                sleep 5
+                INGRESS_IP=$(kubectl get svc -n ${service} | awk '/LoadBalancer/ { print $4 }' | xargs getent hosts | awk 'END { print $1 }')
+              done
+              echo "INGRESS_IP=${INGRESS_IP}"  >> $GITHUB_ENV
+            fi
+          done
+        working-directory: infra/k8s_extra_services
+
       - name: Prepare values file
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
         shell: bash
         run: |
           # Load values from the terraform output
@@ -76,7 +100,6 @@ jobs:
               fi
             fi
           done < <(echo $tf_output | jq -r '.|keys[]')
-          export INGRESS_IP=$(kubectl get svc -n ingress-basic | awk '/LoadBalancer/ { print $4 }')
           export k8s_storageclass=${{ matrix.k8s_storageclass }}
           export github_token="${{ secrets.GITHUB_TOKEN }}"
           envsubst < tests/registry/${{ matrix.test_scenario }}/values.yaml > ci-values.yaml
@@ -126,10 +149,10 @@ jobs:
           exit $status
 
       - name: Collect logs from pods
+        if: always()
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
-        if: always()
         run: |
           mkdir pods_logs && cd pods_logs
           for pod in $(kubectl get pods -n ${NAMESPACE} -o json | jq -r ".items[].metadata.name"); do
@@ -148,6 +171,9 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
         run: |
           kubectl delete ns ${NAMESPACE} || true
+          if [[ "${{ matrix.k8s_extra_services }}" != "" ]]; then
+            kubectl delete ns ${{ matrix.k8s_extra_services }} || true
+          fi
           terraform destroy -auto-approve
           terraform workspace select default && terraform workspace delete ${NAMESPACE}
         working-directory: infra/terraform/${{ matrix.k8s_distribution }}

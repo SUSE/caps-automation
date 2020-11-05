@@ -21,23 +21,13 @@ output "object_storage_bucket" {
   sensitive = true
 }
 
-#output "object_storage_access_key" {
-#  value     = join("", module.blob_storage.*.access_key)
-#  sensitive = true
-#}
-
-#output "object_storage_container_name" {
-#  value     = join("", module.blob_storage.*.container_name)
-#  sensitive = true
-#}
-
-output "redis_fqdn" {
-  value     = join("", module.redis_cache.*.hostname)
+output "object_storage_region" {
+  value     = join("", module.blob_storage.*.region)
   sensitive = true
 }
 
-output "redis_password" {
-  value     = join("", module.redis_cache.*.password)
+output "redis_fqdn" {
+  value     = join("", module.redis_cache.*.fqdn)
   sensitive = true
 }
 
