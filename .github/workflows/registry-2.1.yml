@@ -25,7 +25,7 @@ jobs:
     name: Integration Tests
     runs-on: ecosystem-ci-runners
     container:
-      image: "opensuse/leap:15.2"
+      image: "registry.opensuse.org/opensuse/leap:15.2"
       # ensures a dedicated empty workspace
       volumes:
         - /__w/caps-automation

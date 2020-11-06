@@ -9,7 +9,7 @@ jobs:
     name: Watching projects build
     runs-on: ecosystem-ci-runners
     container:
-      image: "opensuse/leap:15.2"
+      image: "registry.opensuse.org/opensuse/leap:15.2"
     timeout-minutes: 1460
     env:
       PROJECTS: >
