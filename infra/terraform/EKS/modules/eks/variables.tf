@@ -19,7 +19,7 @@ variable "dns_prefix" {
 
 variable "node_count" {
   description = "Initial number of worker nodes"
-  default     = 2
+  default     = 3
 }
 
 variable "vm_size" {

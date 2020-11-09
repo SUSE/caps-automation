@@ -31,20 +31,23 @@ persistence:
       container: ${object_storage_container_name}
 
 portal:
-  replicas: 2
+  replicas: 3
 core:
-  replicas: 2
+  replicas: 3
   # Set the GC time window to 0 for the GC tests to pass
   gcTimeWindowHours: 0
 jobservice:
-  replicas: 2
+  replicas: 3
 registry:
-  replicas: 2
+  replicas: 3
 trivy:
-  replicas: 2
+  replicas: 3
   gitHubToken: "${github_token}"
 notary:
-  replicas: 2
+  server:
+    replicas: 3
+  signer:
+    replicas: 3
 
 database:
   type: external
