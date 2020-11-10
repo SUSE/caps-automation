@@ -148,6 +148,10 @@ jobs:
           internalTLS:
             enabled: true
           imagePullPolicy: Always
+          tests:
+            dockerCredentials:
+              username: suseecosystem
+              password: "${{ secrets.DOCKERHUB_ACCESS_TOKEN }}"
           EOF
 
       - name: SUSE Private Registry (install)
