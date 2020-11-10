@@ -13,7 +13,7 @@ variable "name" {
 
 variable "kubernetes_version" {
   description = "Version of Kubernetes"
-  default     = "1.19.0"
+  default     = "1.19.3"
 }
 
 variable "dns_prefix" {
@@ -23,7 +23,7 @@ variable "dns_prefix" {
 
 variable "node_count" {
   description = "Initial number of nodes which should exist in the default Node Pool"
-  default     = 2
+  default     = 3
 }
 
 variable "vm_size" {

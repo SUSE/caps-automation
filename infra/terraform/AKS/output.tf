@@ -41,6 +41,6 @@ output "redis_password" {
   sensitive = true
 }
 
-output "type" {
+output "storage_type" {
   value = "azure"
 }

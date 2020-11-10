@@ -9,43 +9,45 @@ expose:
       core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
       notary: "notary.${NAMESPACE}.${INGRESS_IP}.nip.io"
     annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
+      cert-manager.io/cluster-issuer: selfsigned
 externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
 harborAdminPassword: "Harbor12345"
+caSecretName: core-tls
 internalTLS:
   enabled: true
 imagePullPolicy: Always
   
 persistence:
-  persistentVolumeClaim:
-    jobservice:
-      storageClass: ${k8s_storageclass}
-      accessMode: ReadWriteMany
-    trivy:
-      storageClass: ${k8s_storageclass}
-      accessMode: ReadWriteMany
   imageChartStorage:
-    type: ${type}
+    type: ${storage_type}
+    s3:
+      region: ${object_storage_region}
+      bucket: ${object_storage_bucket}
+      accesskey: ${AWS_ACCESS_KEY_ID}
+      secretkey: ${AWS_SECRET_ACCESS_KEY}
     azure:
       accountname: ${object_storage_account_name}
       accountkey: "${object_storage_access_key}"
       container: ${object_storage_container_name}
 
 portal:
-  replicas: 2
+  replicas: 3
 core:
-  replicas: 2
+  replicas: 3
   # Set the GC time window to 0 for the GC tests to pass
   gcTimeWindowHours: 0
 jobservice:
-  replicas: 2
+  replicas: 3
 registry:
-  replicas: 2
+  replicas: 3
 trivy:
-  replicas: 2
+  replicas: 3
   gitHubToken: "${github_token}"
 notary:
-  replicas: 2
+  server:
+    replicas: 3
+  signer:
+    replicas: 3
 
 database:
   type: external
@@ -53,7 +55,7 @@ database:
     host: "${db_fqdn}"
     username: "${db_login}"
     password: "${db_password}"
-    sslmode: "verify-full"
+    sslmode: "require"
 
 redis:
   type: external
