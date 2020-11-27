@@ -1,0 +1,68 @@
+expose:
+  tls:
+    certSource: secret
+    secret:
+      secretName: core-tls
+      notarySecretName: notary-tls
+  ingress:
+    hosts:
+      core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
+      notary: "notary.${NAMESPACE}.${INGRESS_IP}.nip.io"
+    annotations:
+      cert-manager.io/cluster-issuer: selfsigned
+externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
+
+harborAdminPassword: "Harbor12345"
+caSecretName: "core-tls"
+caBundleSecretName: suse-ca
+internalTLS:
+  enabled: true
+imagePullPolicy: Always
+
+persistence:
+  persistentVolumeClaim:
+    registry:
+      storageClass: nfs
+      accessMode: ReadWriteMany
+    jobservice:
+      storageClass: nfs
+      accessMode: ReadWriteMany
+    trivy:
+      storageClass: nfs
+      accessMode: ReadWriteMany
+
+portal:
+  replicas: 2
+core:
+  replicas: 2
+  # Set the GC time window to 0 for the GC tests to pass
+  gcTimeWindowHours: 0
+jobservice:
+  replicas: 2
+registry:
+  replicas: 2
+trivy:
+  replicas: 2
+  gitHubToken: "${github_token}"
+notary:
+  server:
+    replicas: 2
+  signer:
+    replicas: 2
+
+redis:
+  type: external
+  external:
+    addr: rfs-harbor-redis:26379
+    sentinelMasterSet: mymaster
+    password: securepassword
+
+tests:
+  dockerCredentials:
+    username: suseecosystem
+    password: "${dh_access_token}"
+  imagesPullRepository: private-registry.prv.suse.net/dockerhub
+  api:
+    exclude:
+      - singularity # CLI not yet included in the harbor-test-image
+      - gc # https://jira.suse.com/browse/CAPS-213
