@@ -28,29 +28,19 @@ kibana:
         hosts: []
 
 fluent-bit:
-  rbac:
-    pspEnabled: true
-  backend:
-    type: es
-    es:
-      host: elasticsearch-master
-      port: 9200
-      # Elastic Index Name
-      index: kubernetes_cluster
-      type: flb_type
-      logstash_prefix: kubernetes_cluster
-      replace_dots: "On"
-      logstash_format: "On"
-      retry_limit: "False"
-      time_key: "@timestamp"
-       # Optional username credential for Elastic X-Pack access
-      http_user:
-      # Password for user defined in HTTP_User
-      http_passwd:
-      # Optional TLS encryption to ElasticSearch instance
-      tls: "off"
-      tls_verify: "on"
-      # TLS certificate for the Elastic (in PEM format). Use if tls=on and tls_verify=on.
-      tls_ca: ""
-      # TLS debugging levels = 1-4
-      tls_debug: 1
+  image:
+    repository: private-registry.prv.suse.net/dockerhub/fluent/fluent-bit
+  podSecurityPolicy:
+    create: true
+  config:
+    outputs: |
+      [OUTPUT]
+          Name es
+          Match *
+          Host elasticsearch-master
+          Port 9200
+          Logstash_Format On
+          Retry_Limit False
+          Type flb_type
+          Replace_Dots On
+          Logstash_Prefix kubernetes_cluster
