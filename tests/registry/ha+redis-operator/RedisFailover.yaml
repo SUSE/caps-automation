@@ -37,11 +37,10 @@ spec:
         metadata:
           name: harbor-redis-data
         spec:
-          storageClassName: nfs
           accessModes:
-            - ReadWriteMany
+            - ReadWriteOnce
           resources:
             requests:
-              storage: 10Gi
+              storage: 1Gi
   auth:
     secretPath: redis-auth
