@@ -19,7 +19,7 @@ resource "aws_security_group" "allow_psql" {
   vpc_id      = aws_default_vpc.default.id
 
   ingress {
-    description = "RDS from VPC"
+    description = "PSQL RDS from VPC"
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
@@ -45,16 +45,23 @@ resource "aws_security_group" "allow_psql" {
   }
 }
 
-resource "aws_db_instance" "postgresql" {
-  allocated_storage      = 10
-  engine                 = "postgres"
+resource "aws_rds_cluster" "aurora" {
+  engine                 = "aurora-postgresql"
   engine_version         = var.postgresql_version
-  instance_class         = "db.t3.medium"
-  password               = random_password.db_password.result
   skip_final_snapshot    = true
   storage_encrypted      = true
   vpc_security_group_ids = [aws_security_group.allow_psql.id]
-  username               = var.administrator_login
+  master_username        = var.administrator_login
+  master_password        = random_password.db_password.result
+}
+
+resource "aws_rds_cluster_instance" "postgresql" {
+  cluster_identifier     = aws_rds_cluster.aurora.id
+  engine                 = aws_rds_cluster.aurora.engine
+  engine_version         = aws_rds_cluster.aurora.engine_version
+  instance_class         = "db.t3.medium"
+  #vpc_security_group_ids = [aws_security_group.allow_psql.id]
+
   publicly_accessible    = true
 }
 
@@ -62,7 +69,7 @@ resource "null_resource" "create_databases" {
   for_each = toset(var.databases)
 
   provisioner "local-exec" {
-    command = "createdb -h ${aws_db_instance.postgresql.address} -U ${var.administrator_login} ${each.value}"
+    command = "createdb -h ${aws_rds_cluster.aurora.endpoint} -U ${var.administrator_login} ${each.value}"
 
     environment = {
       PGPASSWORD = random_password.db_password.result

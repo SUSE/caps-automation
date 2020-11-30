@@ -1,9 +1,9 @@
 output "fqdn" {
-  value = aws_db_instance.postgresql.address
+  value = aws_rds_cluster_instance.postgresql.endpoint
 }
 
 output "login" {
-  value = aws_db_instance.postgresql.username
+  value = aws_rds_cluster.aurora.master_username
 }
 
 output "password" {

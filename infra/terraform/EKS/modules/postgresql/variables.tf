@@ -14,7 +14,7 @@ variable "administrator_login" {
 
 variable "postgresql_version" {
   description = "PostgreSQL Server version to deploy"
-  default     = "11"
+  default     = "11.7"
 }
 
 variable "databases" {
