@@ -11,9 +11,12 @@ jobs:
     env:
       NUMBER_OF_CLUSTERS: 2
       WORKERS: 6
+      REDIS_OPERATOR_CHART_SRC: "registry.suse.de/devel/caps/registry/2.1/charts/harbor/redis-operator:3.1"
       CLUSTER_SERVICES: >-
         ingress-nginx-suse
         cert-manager
+        redisoperator
+        nfs-provisioner
         logging
       GH_API_HEADER: "authorization: Bearer ${{ secrets.GITHUB_TOKEN }}"
     defaults:
@@ -128,15 +131,17 @@ jobs:
         id: deploy_cluster
         run: |
           . ./.openrc
-          docker system prune -fa
-          rm -rf agent.sock
-          eval $(ssh-agent -a $(pwd)/agent.sock)
+          docker system prune --volumes -fa
+          ps ax | grep -q [s]sh-agent || eval $(ssh-agent -s)
           cd catapult
           sed -i "s/^workers =.*/workers = ${WORKERS}/" \
+            backend/caasp4os/terraform-os/terraform.tfvars.skel
+          sed -i "s/^masters =.*/masters = 1/" \
             backend/caasp4os/terraform-os/terraform.tfvars.skel
           echo "::set-output name=step_reached::true"
           OWNER=${CLUSTER_NAME} BACKEND=caasp4os make k8s
           echo "KUBECONFIG=$(realpath build${{ env.CLUSTER_NAME }}/kubeconfig)" >> $GITHUB_ENV
+          chmod 600 build${{ env.CLUSTER_NAME }}/id_rsa_shared
 
       - name: Archive deployment artifacts
         if: always() && steps.deploy_cluster.outputs.step_reached
@@ -161,8 +166,20 @@ jobs:
                 ingress_host="logs.${INGRESS_IP}.nip.io"
                 flags="--set kibana.ingress.hosts={${ingress_host}} --set kibana.ingress.tls[0].hosts={${ingress_host}}"
                 ;;
-              cert-manager)
-                flags="--set cluster_issuer=selfsigned"
+              nfs-provisioner)
+                for node in $(kubectl get nodes -o wide --no-headers | awk '/worker/ { print $7 }'); do
+                  ssh -i ../../../catapult/build${{ env.CLUSTER_NAME }}/id_rsa_shared -o StrictHostKeyChecking=no \
+                    -o UserKnownHostsFile=/dev/null sles@${node} "sudo zypper -n in nfs-client"
+                done
+                flags=""
+                ;;
+              redisoperator)
+                flags=""
+                export HELM_EXPERIMENTAL_OCI=1
+                helm chart pull "${REDIS_OPERATOR_CHART_SRC}"
+                helm chart export "${REDIS_OPERATOR_CHART_SRC}"
+                # replace images repository according to source
+                sed -i "s,registry.suse.com,${REDIS_OPERATOR_CHART_SRC/charts*}containers,g" ${service}/values.yaml
                 ;;
               *)
                 flags=""

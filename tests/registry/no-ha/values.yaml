@@ -1,0 +1,34 @@
+expose:
+  tls:
+    certSource: secret
+    secret:
+      secretName: core-tls
+      notarySecretName: notary-tls
+  ingress:
+    hosts:
+      core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
+      notary: "notary.${NAMESPACE}.${INGRESS_IP}.nip.io"
+    annotations:
+      cert-manager.io/cluster-issuer: selfsigned
+externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
+
+harborAdminPassword: "Harbor12345"
+caSecretName: "core-tls"
+caBundleSecretName: suse-ca
+internalTLS:
+  enabled: true
+imagePullPolicy: Always
+updateStrategy:
+  type: Recreate
+
+core:
+  # Set the GC time window to 0 for the GC tests to pass
+  gcTimeWindowHours: 0
+trivy:
+  gitHubToken: "${github_token}"
+
+tests:
+  dockerCredentials:
+    username: suseecosystem
+    password: "${dh_access_token}"
+  imagesPullRepository: private-registry.prv.suse.net/dockerhub

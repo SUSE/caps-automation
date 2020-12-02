@@ -237,7 +237,7 @@ jobs:
     runs-on: ecosystem-ci-runners
     if: contains(github.event.inputs.repository, 'charts')
     container:
-      image: "opensuse/leap:15.2"
+      image: "registry.opensuse.org/opensuse/leap:15.2"
       volumes:
         - /__w/caps-automation
     env:

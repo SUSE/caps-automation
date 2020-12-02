@@ -22,7 +22,7 @@ env:
 
 jobs:
   test_suse_private_registry:
-    name: Integration Tests
+    name: "${{ github.run_number }}/${{ strategy.job-index }}: ${{ github.event.inputs.project }} (${{ matrix.test_scenario }}, ${{ matrix.action }})"
     runs-on: ecosystem-ci-runners
     container:
       image: "registry.opensuse.org/opensuse/leap:15.2"
@@ -34,6 +34,7 @@ jobs:
       matrix:
         source: ["${{ github.event.inputs.project }}"]
         action: [install, upgrade]
+        test_scenario: ["no-ha", "ha+redis-operator"]
         exclude:
           - source: "SUSE:Containers:CAPS:2"
             action: upgrade
@@ -74,7 +75,7 @@ jobs:
             img_install_src="registry.suse.de/suse/containers/caps/2"
             chart_install_src="${img_install_src}/charts/harbor/harbor:${CHART_VERSION}"
           fi
-          echo "NAMESPACE=spr${REGISTRY_VERSION/./}-${src_name}-${{ matrix.action }}-${{ github.run_number }}" >> $GITHUB_ENV
+          echo "NAMESPACE=spr${REGISTRY_VERSION/./}-${src_name}-${{ github.run_number }}-${{ strategy.job-index }}" >> $GITHUB_ENV
           echo "::set-output name=img_install_src::${img_install_src}"
           echo "::set-output name=chart_install_src::${chart_install_src}"
           echo "::set-output name=src_name::${src_name}"
@@ -87,8 +88,10 @@ jobs:
           fi
           zypper -n ar -f http://download.suse.de/ibs/SUSE:/CA/openSUSE_Leap_15.2/SUSE:CA.repo
           zypper -n ar -Gf ${{ steps.set_env.outputs.requirements_repo }}
-          zypper -n in ca-certificates-suse curl gzip helm jq kubernetes-client python3-robotframework \
-              tar unzip wget
+          zypper -n in ca-certificates-suse curl gettext gzip helm jq kubernetes-client \
+            python3-robotframework tar unzip wget
+
+      - uses: actions/checkout@v2
 
       - name: Fetch kubeconfig from active CaaSP cluster
         run: |
@@ -110,45 +113,37 @@ jobs:
           chmod 0600 kubeconfig
           echo "KUBECONFIG=$(realpath ./kubeconfig)" >> $GITHUB_ENV
 
-      - name: Delete ${{ steps.set_env.outputs.src_name }}-${{ matrix.action }} deployments older than 1 hour
+      - name: Delete ${{ steps.set_env.outputs.src_name }}-${{ strategy.job-index }} deployments older than 1 hour
         run: |
           kubectl get ns -o go-template --template \
             '{{range .items}}{{.metadata.name}} {{.metadata.creationTimestamp}}{{"\n"}}{{end}}' \
             | awk '$2 <= "'$(date -d'now-1 hours' -Ins --utc | sed 's/+0000/Z/')'" { print $1 }' \
-            | grep ${NAMESPACE%-*} | xargs --no-run-if-empty kubectl delete ns
+            | grep $(printf '%s' "${NAMESPACE}" | sed 's/-[[:digit:]]\+-/.*/g') \
+            | xargs --no-run-if-empty kubectl delete ns
           kubectl delete ns ${NAMESPACE} || true
 
-      - name: Generate helm values
+      - name: Prepare values file for SUSE Private Registry
         run: |
-          INGRESS_IP="$(kubectl get svc --all-namespaces -l app=nginx-ingress | awk '/LoadBalancer/ { print $5 }')"
+          export INGRESS_IP="$(kubectl get svc --all-namespaces -l app=nginx-ingress | awk '/LoadBalancer/ { print $5 }')"
           echo "INGRESS_IP=${INGRESS_IP}" >> $GITHUB_ENV
-          cat << EOF | tee ${NAMESPACE}.yaml
-          expose:
-            tls:
-              certSource: secret
-              secret:
-                secretName: core-tls
-                notarySecretName: notary-tls
-            ingress:
-              hosts:
-                core: "${NAMESPACE}.${INGRESS_IP}.nip.io"
-                notary: "notary.${NAMESPACE}.${INGRESS_IP}.nip.io"
-              annotations:
-                cert-manager.io/cluster-issuer: selfsigned
-          externalURL: "https://${NAMESPACE}.${INGRESS_IP}.nip.io"
-          harborAdminPassword: "Harbor12345"
-          caSecretName: "core-tls"
-          core:
-            # Set the GC time window to 0 for the GC tests to pass
-            gcTimeWindowHours: 0
-          trivy:
-            gitHubToken: "${{ secrets.GITHUB_TOKEN }}"
-          updateStrategy:
-            type: Recreate
-          internalTLS:
-            enabled: true
-          imagePullPolicy: Always
-          EOF
+          export github_token="${{ secrets.GITHUB_TOKEN }}"
+          export dh_access_token="${{ secrets.DOCKERHUB_ACCESS_TOKEN }}"
+          envsubst < tests/registry/${{ matrix.test_scenario }}/values.yaml > ci-values.yaml
+          cat ci-values.yaml
+          kubectl create ns ${NAMESPACE}
+
+      - name: RedisFailover (install)
+        if: contains(matrix.test_scenario, 'redis-operator')
+        run: |
+          echo -n "securepassword" > password
+          kubectl -n ${NAMESPACE} create secret generic redis-auth --from-file=password
+          rm password
+          export img_src="${{ steps.set_env.outputs.img_install_src }}/containers"
+          export img_tag="$(curl -s https://$(echo ${img_src} | sed 's#.de#&/v2#')/harbor/harbor-redis/tags/list | jq -r ".tags[]" | grep -v rev | sort -V | tail -n1)"
+          envsubst < tests/registry/${{ matrix.test_scenario }}/RedisFailover.yaml > RedisFailover.yaml
+          kubectl -n ${NAMESPACE} create -f RedisFailover.yaml
+          sleep 60
+          kubectl -n ${NAMESPACE} wait pods -l app.kubernetes.io/name=harbor-redis --for condition=Ready --timeout 10m
 
       - name: SUSE Private Registry (install)
         run: |
@@ -157,8 +152,10 @@ jobs:
           chart="./harbor"
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ steps.set_env.outputs.img_install_src }}/containers,g' ${chart}/values.yaml
-          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --create-namespace \
-            --timeout 10m --wait
+          # create suse-ca secret for pulling test images from private-registry.prv.suse.net
+          kubectl -n ${NAMESPACE} create secret generic suse-ca --from-file \
+            ca.crt=$(rpm -ql ca-certificates-suse | grep crt)
+          helm install ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ci-values.yaml --timeout 10m --wait
 
       - name: SUSE Private Registry (upgrade)
         if: matrix.action == 'upgrade'
@@ -168,7 +165,7 @@ jobs:
           chart="./harbor"
           # replace images repository according to source
           sed -i 's,registry.suse.com,${{ steps.set_env.outputs.img_upgrade_src }}/containers,g' ${chart}/values.yaml
-          helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ${NAMESPACE}.yaml --timeout 10m --wait
+          helm upgrade ${NAMESPACE} ${chart} -n ${NAMESPACE} --values ci-values.yaml --timeout 10m --wait
 
       - name: Run tests
         id: run_tests
@@ -187,6 +184,7 @@ jobs:
             sleep 1
           done
           kubectl cp -n $namespace $test_pods:/var/lib/harbor-test/output.xml test_report/output.xml
+          kubectl cp -n $namespace $test_pods:/var/lib/harbor-test/daemon-local.log test_report/daemon-local.log
           wait $helm_test_pid
           status=$?
           rebot -d test_report --log api_log.html --report api_report.html --xunit api_xunit.xml \
@@ -212,14 +210,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: logs_${{ steps.set_env.outputs.src_name }}-${{ matrix.action }}
+          name: "logs-${{ github.run_number }}_${{ strategy.job-index }}-${{ steps.set_env.outputs.src_name }}-${{ matrix.test_scenario }}-${{ matrix.action }}"
           path: pods_logs/*
 
       - name: Archive test results
         if: always() && steps.run_tests.outputs.has_artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: test_report_${{ steps.set_env.outputs.src_name }}-${{ matrix.action }}
+          name: "test_report-${{ github.run_number }}_${{ strategy.job-index }}-${{ steps.set_env.outputs.src_name }}-${{ matrix.test_scenario }}-${{ matrix.action }}"
           path: test_report/*
 
       - name: Process test results
@@ -233,7 +231,7 @@ jobs:
         uses: flaviodsr/Rocket.Chat.GitHub.Action.Notification@master
         with:
           type: ${{ job.status }}
-          job_name: "*[${{ matrix.action }}] Integration Tests*"
+          job_name: "*Integration Tests (${{ matrix.test_scenario }}, ${{ matrix.action }})*"
           job_ref: ${{ github.event.inputs.project }}/${{ github.event.inputs.repository }}
           deployment_url: https://${{ env.NAMESPACE }}.${{ env.INGRESS_IP }}.nip.io
           logs_url: https://logs.${{ env.INGRESS_IP }}.nip.io
@@ -244,15 +242,19 @@ jobs:
 
 
   test_package_lint:
-    name: Package and Lint chart
+    name: Lint chart
     runs-on: ecosystem-ci-runners
     if: contains(github.event.inputs.repository, 'charts')
     container:
-      image: "opensuse/leap:15.2"
+      image: "registry.opensuse.org/opensuse/leap:15.2"
       volumes:
         - /__w/caps-automation
+    strategy:
+      fail-fast: false
+      matrix:
+        chart: ["harbor:1.5", "redis-operator:3.1"]
     env:
-      CHART_PATH: ./harbor
+      chart: "${{ matrix.chart }}"
     steps:
       - name: Install requirements
         run: |
@@ -273,21 +275,18 @@ jobs:
         run: |
           chart_src="registry.suse.de/$(echo "${{ github.event.inputs.project }}" \
             | tr : / | tr '[:upper:]' '[:lower:]')"
-          helm chart pull ${chart_src}/charts/harbor/harbor:${CHART_VERSION}
-          helm chart export ${chart_src}/charts/harbor/harbor:${CHART_VERSION}
-
-      - name: Package chart
-        run: helm package ${CHART_PATH}
+          helm chart pull ${chart_src}/charts/harbor/${{ matrix.chart }}
+          helm chart export ${chart_src}/charts/harbor/${{ matrix.chart }}
 
       - name: Lint chart
-        run: helm lint ${CHART_PATH}
+        run: helm lint $(echo ${chart//:*} | tr -d -)
 
       - name: Notify
         if: always()
         uses: flaviodsr/Rocket.Chat.GitHub.Action.Notification@master
         with:
           type: ${{ job.status }}
-          job_name: "*Package and Lint chart*"
+          job_name: "*Lint chart (${{ matrix.chart }})*"
           job_ref: ${{ github.event.inputs.project }}/${{ github.event.inputs.repository }}
           mention: here
           mention_if: failure
