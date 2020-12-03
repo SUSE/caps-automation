@@ -13,8 +13,6 @@ jobs:
     timeout-minutes: 1460
     env:
       PROJECTS: >
-        Devel:CAPS:Registry:2.0
-        SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:2.0
         SUSE:Containers:CAPS:2
         Devel:CAPS:Registry:2.1
         SUSE:SLE-15-SP2:Update:Products:CAPS-Registry:2.1
