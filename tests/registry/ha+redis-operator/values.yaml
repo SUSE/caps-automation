@@ -40,7 +40,7 @@ core:
 jobservice:
   replicas: 2
 registry:
-  replicas: 2
+  replicas: 1
 trivy:
   replicas: 2
   gitHubToken: "${github_token}"
