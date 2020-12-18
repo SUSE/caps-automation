@@ -30,7 +30,7 @@ jobs:
             k8s_extra_services: >-
               ingress-nginx-upstream
               cert-manager
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Setup environment
         id: set_env
@@ -154,7 +154,7 @@ jobs:
           release_name=${NAMESPACE}
           namespace=${NAMESPACE}
           mkdir test_report
-          helm test -n $namespace $release_name --timeout 30m &
+          helm test -n $namespace $release_name --timeout 60m &
           helm_test_pid=$!
           test_pods=$(helm status -n $namespace $release_name -o json | jq -r .hooks[].name)
           until kubectl exec -n $namespace $test_pods "--" pgrep "pybot|robot" &> /dev/null; do
