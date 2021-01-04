@@ -56,23 +56,24 @@ resource "aws_rds_cluster" "aurora" {
 }
 
 resource "aws_rds_cluster_instance" "postgresql" {
-  cluster_identifier     = aws_rds_cluster.aurora.id
-  engine                 = aws_rds_cluster.aurora.engine
-  engine_version         = aws_rds_cluster.aurora.engine_version
-  instance_class         = "db.t3.medium"
-  #vpc_security_group_ids = [aws_security_group.allow_psql.id]
+  cluster_identifier = aws_rds_cluster.aurora.id
+  engine             = aws_rds_cluster.aurora.engine
+  engine_version     = aws_rds_cluster.aurora.engine_version
+  instance_class     = "db.t3.medium"
 
-  publicly_accessible    = true
+  publicly_accessible = true
+  depends_on          = [aws_rds_cluster.aurora]
 }
 
 resource "null_resource" "create_databases" {
   for_each = toset(var.databases)
 
   provisioner "local-exec" {
-    command = "createdb -h ${aws_rds_cluster.aurora.endpoint} -U ${var.administrator_login} ${each.value}"
+    command = "until getent hosts ${aws_rds_cluster.aurora.endpoint}; do sleep 5; done; createdb -h ${aws_rds_cluster.aurora.endpoint} -U ${var.administrator_login} ${each.value}"
 
     environment = {
       PGPASSWORD = random_password.db_password.result
     }
   }
+  depends_on = [aws_rds_cluster_instance.postgresql]
 }
