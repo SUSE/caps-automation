@@ -61,7 +61,7 @@ tests:
   dockerCredentials:
     username: suseecosystem
     password: "${dh_access_token}"
-  imagesPullRepository: private-registry.prv.suse.net/dockerhub
+  imagesPullRepository: private-registry.prv.suse.net
   api:
     exclude:
       - singularity # CLI not yet included in the harbor-test-image
